@@ -22,12 +22,13 @@ import org.dataconservancy.pass.deposit.assembler.shared.SizedStream;
 import org.dataconservancy.pass.deposit.model.DepositFile;
 import org.dataconservancy.pass.deposit.model.DepositFileType;
 import org.dataconservancy.pass.deposit.model.DepositManifest;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Jim Martino (jrm@jhu.edu)

@@ -78,12 +78,11 @@ public class BaseDspaceMetsAssemblerIT extends BaseAssemblerIT {
 
     @Override
     protected DspaceMetsAssembler assemblerUnderTest() {
-        ExceptionHandlingThreadPoolExecutor executorService = new ExceptionHandlingThreadPoolExecutor(1, 2, 1,
-                TimeUnit.MINUTES, new ArrayBlockingQueue<>(10));
-        DspaceMetsPackageProvider packageProvider =
-                new DspaceMetsPackageProvider(new DspaceMetadataDomWriterFactory(
-                        DocumentBuilderFactory.newInstance()));
-        return new DspaceMetsAssembler(mbf, rbf, executorService, packageProvider);
+        DspaceMetadataDomWriterFactory domWriterFactory =
+                new DspaceMetadataDomWriterFactory(DocumentBuilderFactory.newInstance());
+        DspaceMetsPackageProviderFactory packageProviderFactory =
+                new DspaceMetsPackageProviderFactory(domWriterFactory);
+        return new DspaceMetsAssembler(mbf, rbf, packageProviderFactory);
     }
 
     @Override

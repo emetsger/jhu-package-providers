@@ -56,12 +56,11 @@ public class MultipleAssemblyDspaceMetsAssemblerIT extends BaseDspaceMetsAssembl
      */
     @BeforeClass
     public static void initAssembler() {
-        ExceptionHandlingThreadPoolExecutor executorService =
-                new ExceptionHandlingThreadPoolExecutor(1, 2, 1, TimeUnit.MINUTES, new ArrayBlockingQueue<>(10));
-        DspaceMetsPackageProvider packageProvider = new DspaceMetsPackageProvider(
-                new DspaceMetadataDomWriterFactory(DocumentBuilderFactory.newInstance()));
-        underTest = new DspaceMetsAssembler(metadataBuilderFactory(), resourceBuilderFactory(),
-                executorService, packageProvider);
+        DspaceMetadataDomWriterFactory metsWriterFactory = new DspaceMetadataDomWriterFactory(
+                DocumentBuilderFactory.newInstance());
+        DspaceMetsPackageProviderFactory packageProviderFactory = new DspaceMetsPackageProviderFactory(
+                metsWriterFactory);
+        underTest = new DspaceMetsAssembler(metadataBuilderFactory(), resourceBuilderFactory(), packageProviderFactory);
     }
 
     /**

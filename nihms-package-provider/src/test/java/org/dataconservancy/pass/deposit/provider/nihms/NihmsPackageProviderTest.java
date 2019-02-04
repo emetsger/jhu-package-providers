@@ -19,7 +19,8 @@ import org.dataconservancy.pass.deposit.model.DepositFileType;
 import org.junit.Test;
 
 import static org.dataconservancy.pass.deposit.provider.nihms.NihmsPackageProvider.getNonCollidingFilename;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Elliot Metsger (emetsger@jhu.edu)

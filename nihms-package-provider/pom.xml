@@ -29,6 +29,33 @@
     <name>NIH Package Provider</name>
     <description>Creates packages according to the NIMS packaging specification</description>
 
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-after-its</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
     <dependencies>
 
         <dependency>
@@ -110,6 +137,31 @@
         <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>fedora-builder</artifactId>
+            <version>${deposit-services.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>shared-resources</artifactId>
+            <version>${deposit-services.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>fedora-builder</artifactId>
+            <version>${deposit-services.version}</version>
             <scope>test</scope>
         </dependency>
 

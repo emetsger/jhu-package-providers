@@ -22,13 +22,13 @@ import org.dataconservancy.pass.deposit.assembler.PackageOptions.Archive;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions.Compression;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions.Spec;
 import org.dataconservancy.pass.deposit.assembler.PackageStream;
+import org.dataconservancy.pass.deposit.assembler.shared.AbstractAssembler;
+import org.dataconservancy.pass.deposit.assembler.shared.BaseAssemblerIT;
 import org.dataconservancy.pass.deposit.assembler.shared.ExceptionHandlingThreadPoolExecutor;
 import org.dataconservancy.pass.deposit.model.DepositFile;
 import org.dataconservancy.pass.deposit.model.DepositFileType;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
 import org.dataconservancy.pass.deposit.model.DepositMetadata.Person;
-import org.dataconservancy.pass.deposit.assembler.shared.AbstractAssembler;
-import org.dataconservancy.pass.deposit.assembler.shared.BaseAssemblerIT;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -50,9 +50,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.dataconservancy.pass.deposit.DepositTestUtil.asList;
 import static org.dataconservancy.pass.deposit.provider.nihms.NihmsAssembler.APPLICATION_GZIP;
 import static org.dataconservancy.pass.deposit.provider.nihms.NihmsAssembler.SPEC_NIHMS_NATIVE_2017_07;
-import static org.dataconservancy.pass.deposit.DepositTestUtil.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -97,10 +97,8 @@ public class NihmsAssemblerIT extends BaseAssemblerIT {
 
     @Override
     protected AbstractAssembler assemblerUnderTest() {
-        ExceptionHandlingThreadPoolExecutor executorService = new ExceptionHandlingThreadPoolExecutor(1, 2, 1,
-                TimeUnit.MINUTES, new ArrayBlockingQueue<>(10));
-        org.dataconservancy.pass.deposit.provider.nihms.NihmsPackageProvider packageProvider = new org.dataconservancy.pass.deposit.provider.nihms.NihmsPackageProvider();
-        return new NihmsAssembler(mbf, rbf, executorService, packageProvider);
+        NihmsPackageProviderFactory packageProviderFactory = new NihmsPackageProviderFactory();
+        return new NihmsAssembler(mbf, rbf, packageProviderFactory);
     }
 
     @Override

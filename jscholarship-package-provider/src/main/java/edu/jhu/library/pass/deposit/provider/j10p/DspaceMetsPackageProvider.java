@@ -73,8 +73,6 @@ public class DspaceMetsPackageProvider implements PackageProvider {
 
     @Override
     public List<SupplementalResource> finish(DepositSubmission submission, List<Resource> packageResources) {
-        packageResources.forEach(r -> System.err.println(">>>> Got resource: " + r));
-
         // this is where we compose the METS xml
         packageResources.forEach(r -> metsWriter.addResource(r));
         metsWriter.addSubmission(submission);

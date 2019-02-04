@@ -29,6 +29,33 @@
     <name>JScholarship (DSpace METS Profile) Package Provider</name>
     <description>Creates packages according to the DSpace METS SIP Profile and JHU metadata conventions</description>
 
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-after-its</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
     <dependencies>
 
         <dependency>

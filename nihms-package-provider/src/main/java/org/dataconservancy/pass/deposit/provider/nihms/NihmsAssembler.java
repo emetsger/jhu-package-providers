@@ -18,18 +18,14 @@ package org.dataconservancy.pass.deposit.provider.nihms;
 
 import org.dataconservancy.pass.deposit.assembler.MetadataBuilder;
 import org.dataconservancy.pass.deposit.assembler.PackageStream;
-import org.dataconservancy.pass.deposit.assembler.shared.ArchivingPackageStream;
-import org.dataconservancy.pass.deposit.assembler.shared.DefaultStreamWriterImpl;
-import org.dataconservancy.pass.deposit.assembler.shared.ExceptionHandlingThreadPoolExecutor;
-import org.dataconservancy.pass.deposit.assembler.shared.PackageProvider;
-import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.dataconservancy.pass.deposit.assembler.shared.AbstractAssembler;
+import org.dataconservancy.pass.deposit.assembler.shared.ArchivingPackageStream;
 import org.dataconservancy.pass.deposit.assembler.shared.DepositFileResource;
 import org.dataconservancy.pass.deposit.assembler.shared.Extension;
 import org.dataconservancy.pass.deposit.assembler.shared.MetadataBuilderFactory;
 import org.dataconservancy.pass.deposit.assembler.shared.ResourceBuilderFactory;
+import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -61,19 +57,14 @@ public class NihmsAssembler extends AbstractAssembler {
 
     private static final String PACKAGE_FILE_NAME = "%s_%s_%s";
 
-    private ExceptionHandlingThreadPoolExecutor executorService;
-
-    private PackageProvider packageProvider;
+    private NihmsPackageProviderFactory packageProviderFactory;
 
     @Autowired
     public NihmsAssembler(MetadataBuilderFactory mbf,
                           ResourceBuilderFactory rbf,
-                          ExceptionHandlingThreadPoolExecutor executorService,
-                          @Qualifier("nihmsPackageProvider")
-                          PackageProvider packageProvider) {
+                          NihmsPackageProviderFactory packageProviderFactory) {
         super(mbf, rbf);
-        this.executorService = executorService;
-        this.packageProvider = packageProvider;
+        this.packageProviderFactory = packageProviderFactory;
     }
 
     @Override
@@ -83,9 +74,8 @@ public class NihmsAssembler extends AbstractAssembler {
                                                 Map<String, Object> options) {
         buildMetadata(mb, options);
         namePackage(submission, mb);
-        DefaultStreamWriterImpl streamWriter = new DefaultStreamWriterImpl(submission, custodialResources, rbf,
-                options, this.packageProvider);
-        return new ArchivingPackageStream(custodialResources, mb, rbf, options, executorService, streamWriter);
+        NihmsPackageProvider packageProvider = this.packageProviderFactory.newInstance();
+        return new ArchivingPackageStream(submission, custodialResources, mb, rbf, options, packageProvider);
     }
 
     static void namePackage(DepositSubmission submission, MetadataBuilder mb) {
