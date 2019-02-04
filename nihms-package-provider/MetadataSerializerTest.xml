@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nihms-submit SYSTEM "bulksubmission.dtd">
+<nihms-submit>
+  <manuscript id="00001" publisher_pdf="yes" show_publisher_pdf="no" href="http://farm.com/Cows" doi="10.1234/smh0000001"/>
+  <journal-meta>
+    <journal-id journal-id-type="nlm-ta">FJ001</journal-id>
+    <issn pub-type="epub">1234-5678</issn>
+    <journal-title>Dairy Cow Monthly</journal-title>
+  </journal-meta>
+  <title>Manuscript Title</title>
+  <contacts>
+    <person fname="Elsie" mname="The" lname="Cow" email="person@farm.com" corrpi="yes" pi="yes"/>
+  </contacts>
+</nihms-submit>
