@@ -25,7 +25,7 @@
     "transport-config": {
       "protocol-binding": {
         "protocol": "filesystem",
-        "baseDir": "/packages",
+        "baseDir": "/packages/jscholarship",
         "createIfMissing": "true",
         "overwrite": "false"
       }
@@ -47,7 +47,7 @@
     "transport-config": {
       "protocol-binding": {
         "protocol": "filesystem",
-        "baseDir": "/packages",
+        "baseDir": "/packages/pmc",
         "createIfMissing": "true",
         "overwrite": "false"
       }
