@@ -16,6 +16,7 @@
 package org.dataconservancy.pass.deposit.provider.nihms;
 
 import org.apache.commons.io.IOUtils;
+import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
 
@@ -39,11 +40,12 @@ import static org.junit.Assert.assertTrue;
 public class NihmsPackageVerifier implements PackageVerifier {
 
     @Override
-    public void verify(DepositSubmission submission, File packageDir, Map<String, Object> map) throws Exception {
+    public void verify(DepositSubmission submission, ExplodedPackage explodedPackage, Map<String, Object> map)
+            throws Exception {
         FileFilter custodialFiles = notFileFilter(or
                 (nameFileFilter(BULK_META_FILENAME), nameFileFilter(MANIFEST_FILENAME)));
 
-        verifyCustodialFiles(submission, packageDir, custodialFiles, (packageDirectory, file) -> {
+        verifyCustodialFiles(submission, explodedPackage.getExplodedDir(), custodialFiles, (packageDirectory, file) -> {
             return submission.getFiles()
                     .stream()
                     .filter(df -> df.getName()
@@ -52,8 +54,8 @@ public class NihmsPackageVerifier implements PackageVerifier {
         });
 
         // Verify supplemental files (i.e. non-custodial content like metadata) exist and have expected content
-        File bulk_meta = new File(packageDir, NihmsAssembler.BULK_META_FILENAME);
-        File manifest = new File(packageDir, NihmsAssembler.MANIFEST_FILENAME);
+        File bulk_meta = new File(explodedPackage.getExplodedDir(), NihmsAssembler.BULK_META_FILENAME);
+        File manifest = new File(explodedPackage.getExplodedDir(), NihmsAssembler.MANIFEST_FILENAME);
 
         assertTrue(bulk_meta.exists() && bulk_meta.length() > 0);
         assertTrue(manifest.exists() && manifest.length() > 0);

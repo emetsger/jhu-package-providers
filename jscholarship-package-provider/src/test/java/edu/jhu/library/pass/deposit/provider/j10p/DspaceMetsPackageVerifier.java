@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.DigestObserver;
 import org.apache.commons.io.input.ObservableInputStream;
 import org.apache.commons.io.output.NullOutputStream;
+import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.assembler.shared.ResourceBuilderImpl;
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
@@ -93,7 +94,7 @@ public class DspaceMetsPackageVerifier implements PackageVerifier {
                 metsFileGroup.getFiles().forEach(metsFile -> {
                     File asJavaIoFile = null;
                     try {
-                        asJavaIoFile = new File(packageDir, metsFile.getFLocats().get(0).getHref());
+                        asJavaIoFile = new File(explodedPackage.getExplodedDir(), metsFile.getFLocats().get(0).getHref());
                     } catch (METSException e) {
                         throw new RuntimeException(e);
                     }
