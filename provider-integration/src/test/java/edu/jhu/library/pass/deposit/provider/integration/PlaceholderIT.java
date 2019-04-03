@@ -15,22 +15,23 @@
  */
 package edu.jhu.library.pass.deposit.provider.integration;
 
-import edu.jhu.library.pass.deposit.provider.j10p.DspaceMetsAssembler;
+import edu.jhu.library.pass.deposit.provider.j10p.DspaceMetsPackageVerifier;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions;
+import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.integration.shared.SubmitAndValidatePackagesIT;
-import org.junit.Test;
+import org.dataconservancy.pass.deposit.model.DepositSubmission;
+import org.dataconservancy.pass.deposit.provider.nihms.NihmsPackageVerifier;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
 
-import static java.util.Collections.singletonList;
+import static org.junit.Assert.fail;
 
 /**
  * @author Elliot Metsger (emetsger@jhu.edu)
@@ -41,11 +42,6 @@ public class PlaceholderIT extends SubmitAndValidatePackagesIT {
 
     private static final Logger LOG = LoggerFactory.getLogger(PlaceholderIT.class);
 
-    @Test
-    public void placeholder() {
-        LOG.info("Executing placeholder IT.");
-    }
-
     // TODO: Submit to NIHMS Repository using Filesystem Transport and verify package
 
     // TODO: Submit to J10P Repository using Filesystem Transport and verify package
@@ -54,26 +50,38 @@ public class PlaceholderIT extends SubmitAndValidatePackagesIT {
 
     // TODO: Submit to NIHMS Repository using FTP Transport and verify logical success (separate IT)
 
+    private DspaceMetsPackageVerifier dspaceVerifier;
 
-    @Override
-    protected Map<String, Object> getPackageOpts() {
-        return new HashMap<String, Object>() {
-            {
-                put(PackageOptions.Spec.KEY, DspaceMetsAssembler.SPEC_DSPACE_METS);
-                put(PackageOptions.Archive.KEY, PackageOptions.Archive.OPTS.ZIP);
-                put(PackageOptions.Compression.KEY, PackageOptions.Compression.OPTS.ZIP);
-                put(PackageOptions.Checksum.KEY, singletonList(PackageOptions.Checksum.OPTS.SHA256));
-            }
-        };
+    private NihmsPackageVerifier nihmsVerifier;
+
+    @Before
+    public void setUp() throws Exception {
+        dspaceVerifier = new DspaceMetsPackageVerifier(PackageOptions.Checksum.OPTS.SHA512);
+        nihmsVerifier = new NihmsPackageVerifier();
     }
 
     @Override
-    protected PackageVerifier getVerifier() {
+    protected PackageVerifier getVerifier(DepositSubmission depositSubmission, ExplodedPackage explodedPackage) {
+        if (explodedPackage.getPackageFile().toString().contains("pmc")) {
+            return nihmsVerifier;
+        }
+
+        if (explodedPackage.getPackageFile().toString().contains("jscholarship")) {
+            return dspaceVerifier;
+        }
+
+        fail("Unable to select PackageVerifier");
         return null;
     }
 
     @Override
-    protected InputStream getSubmissionResources() {
-        return null;
+    protected PackageOptions.Compression.OPTS sniffCompression(File packageFile) {
+        return PackageOptions.Compression.OPTS.NONE;
     }
+
+    @Override
+    protected PackageOptions.Archive.OPTS sniffArchive(File packageFile) {
+        return PackageOptions.Archive.OPTS.ZIP;
+    }
+
 }

@@ -351,9 +351,27 @@
 
         <dependency>
             <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
+            <artifactId>jscholarship-package-provider</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
             <artifactId>nihms-package-provider</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
+            <artifactId>nihms-package-provider</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+            <classifier>tests</classifier>
         </dependency>
 
         <dependency>
