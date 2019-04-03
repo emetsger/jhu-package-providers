@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -47,12 +48,24 @@ import static org.junit.Assert.assertTrue;
  */
 public class DspaceMetsPackageVerifier implements PackageVerifier {
 
+    private Checksum.OPTS defaultChecksumAlgo = Checksum.OPTS.MD5;
+
+    public DspaceMetsPackageVerifier() {
+
+    }
+
+    public DspaceMetsPackageVerifier(Checksum.OPTS defaultChecksumAlgo) {
+        this.defaultChecksumAlgo = defaultChecksumAlgo;
+    }
+
     @Override
-    public void verify(DepositSubmission submission, File packageDir, Map<String, Object> options) throws Exception {
+    @SuppressWarnings("unchecked")
+    public void verify(DepositSubmission submission, ExplodedPackage explodedPackage, Map<String, Object> options)
+            throws Exception {
         // Verify custodial content is present and accounted for
 
         FileFilter excludeMets = notFileFilter(nameFileFilter(METS_XML, IOCase.SYSTEM));
-        verifyCustodialFiles(submission, packageDir, excludeMets, (baseDir, custodialFile) -> {
+        verifyCustodialFiles(submission, explodedPackage.getExplodedDir(), excludeMets, (baseDir, custodialFile) -> {
             return submission.getFiles()
                     .stream()
                     .filter(df -> df.getName().equals(custodialFile.getName()))
@@ -64,9 +77,10 @@ public class DspaceMetsPackageVerifier implements PackageVerifier {
 
         // Verify supplemental content - in this case, METS.xml and its content
 
-        Checksum.OPTS preferredChecksumAlgo = ((List<Checksum.OPTS>) options.get(Checksum.KEY)).get(0);
+        Checksum.OPTS preferredChecksumAlgo = ((List<Checksum.OPTS>) options.getOrDefault(
+                Checksum.KEY, Collections.singletonList(defaultChecksumAlgo))).get(0);
 
-        File metsXml = new File(packageDir, METS_XML);
+        File metsXml = new File(explodedPackage.getExplodedDir(), METS_XML);
         assertTrue(metsXml.exists() && metsXml.length() > 0);
         METSReader metsReader = new METSReader();
         metsReader.mapToDOM(new FileInputStream(metsXml));
@@ -166,5 +180,13 @@ public class DspaceMetsPackageVerifier implements PackageVerifier {
     </div>
   </structMap>
          */
+    }
+
+    public Checksum.OPTS getDefaultChecksumAlgo() {
+        return defaultChecksumAlgo;
+    }
+
+    public void setDefaultChecksumAlgo(Checksum.OPTS defaultChecksumAlgo) {
+        this.defaultChecksumAlgo = defaultChecksumAlgo;
     }
 }
