@@ -144,6 +144,10 @@
                                                 <!-- packages written by deposit services will be visible under
                                                      'target/packages' -->
                                                 <volume>${project.build.directory}/packages:/packages</volume>
+
+                                                <!-- overwrite /etc/hosts with an empty file, so that the alias
+                                                     'localhost' resolves to the fcrepo container -->
+                                                <volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>
                                             </bind>
                                         </volumes>
                                         <env>
@@ -191,6 +195,7 @@
                                         <network>
                                             <name>its</name>
                                             <alias>fcrepo</alias>
+                                            <alias>localhost</alias>
                                         </network>
                                     </run>
                                 </image>
