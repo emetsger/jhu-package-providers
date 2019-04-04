@@ -153,20 +153,6 @@
                                     </run>
                                 </image>
 
-                                <!-- Assets -->
-
-                                <image>
-                                    <name>${docker.assets.version}</name>
-                                    <alias>assets</alias>
-                                    <run>
-                                        <volumes>
-                                            <bind>
-                                                <volume>/data</volume>
-                                            </bind>
-                                        </volumes>
-                                    </run>
-                                </image>
-
                                 <!-- Fedora, Elastic Search, and the Indexer -->
 
                                 <image>
@@ -188,7 +174,7 @@
                                             <port>${fcrepo.stomp.port}:${fcrepo.stomp.port}</port>
                                         </ports>
                                         <env>
-                                            <FCREPO_HOME>/data</FCREPO_HOME>
+                                            <FCREPO_HOME>/usr/local/tomcat/fcrepo4-data</FCREPO_HOME>
                                             <FCREPO_HOST>fcrepo</FCREPO_HOST>
                                             <FCREPO_PORT>${fcrepo.http.port}</FCREPO_PORT>
                                             <FCREPO_JMS_PORT>${fcrepo.jms.port}</FCREPO_JMS_PORT>
@@ -200,11 +186,6 @@
                                             <name>its</name>
                                             <alias>fcrepo</alias>
                                         </network>
-                                        <volumes>
-                                            <from>
-                                                <image>assets</image>
-                                            </from>
-                                        </volumes>
                                     </run>
                                 </image>
                                 <image>
@@ -224,18 +205,12 @@
                                         <env>
                                             <discovery.type>single-node</discovery.type>
                                             <bootstrap.memory_lock>true</bootstrap.memory_lock>
-                                            <path.data>/data</path.data>
                                             <ES_JAVA_OPTS>-Xms512m -Xmx512m</ES_JAVA_OPTS>
                                         </env>
                                         <network>
                                             <name>its</name>
                                             <alias>elasticsearch</alias>
                                         </network>
-                                        <volumes>
-                                            <from>
-                                                <image>assets</image>
-                                            </from>
-                                        </volumes>
                                     </run>
                                 </image>
                                 <image>
@@ -253,11 +228,17 @@
                                             <PI_FEDORA_JMS_QUEUE>fedora</PI_FEDORA_JMS_QUEUE>
                                             <PI_TYPE_PREFIX>http://oapass.org/ns/pass#</PI_TYPE_PREFIX>
                                             <PI_LOG_LEVEL>DEBUG</PI_LOG_LEVEL>
+                                            <PI_ES_CONFIG>/app/esconfig/esconfig-3.4.json</PI_ES_CONFIG>
                                         </env>
                                         <network>
                                             <name>its</name>
                                             <alias>indexer</alias>
                                         </network>
+                                        <volumes>
+                                            <bind>
+                                                <volume>${project.build.testOutputDirectory}/esconfig:/app/esconfig</volume>
+                                            </bind>
+                                        </volumes>
                                     </run>
                                 </image>
                             </images>
