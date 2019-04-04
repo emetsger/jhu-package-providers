@@ -34,13 +34,33 @@ import java.io.File;
 import static org.junit.Assert.fail;
 
 /**
+ * Verifies packages created by the DSpace and NIHMS assemblers.
+ * <p>
+ * The Package Providers image created in the {@code provider-integration} module uses a custom runtime configuration
+ * for Deposit Services, present as a class path resource in {@code src/main/docker/repositories.json}.  Note that there
+ * are two configured repositories, and each repository is configured with a Filesystem Transport as required by the
+ * {@link SubmitAndValidatePackagesIT}.
+ * </p>
+ * <p>
+ * There is one non-ideal coupling right now between this class and the {@code SubmitAndValidatePackagesIT}: the
+ * submissions submitted by {@link SubmitAndValidatePackagesIT#performSubmissions()} must contain {@code Repository}
+ * resources that match the repositories configured in {@code src/main/docker/repositories.json}.  This is really a
+ * must-fix before this code is released to the wild for developers to use.  The quick fix is for this class to
+ * override {@link SubmitAndValidatePackagesIT#performSubmissions() performSubmissions()}, thereby making this
+ * connection between {@code Repository} in the submission graphs and the repository configuration in Deposit Services
+ * explicit.  A more clever solution may be to create {@code Repository} resources dynamically based on the runtime
+ * configuration present in {@code repositories.json}
+ * </p>
+ *
  * @author Elliot Metsger (emetsger@jhu.edu)
  */
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = SpringContextConfiguration.class)
-public class PlaceholderIT extends SubmitAndValidatePackagesIT {
+public class ValidateDspaceAndNihmsProviders extends SubmitAndValidatePackagesIT {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PlaceholderIT.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ValidateDspaceAndNihmsProviders.class);
+
+    // Meta TODO: review below TODOs for accuracy/need
 
     // TODO: Submit to NIHMS Repository using Filesystem Transport and verify package
 
@@ -54,12 +74,27 @@ public class PlaceholderIT extends SubmitAndValidatePackagesIT {
 
     private NihmsPackageVerifier nihmsVerifier;
 
+    /**
+     * Initializes the package verifiers.
+     *
+     * @throws Exception
+     */
     @Before
     public void setUp() throws Exception {
         dspaceVerifier = new DspaceMetsPackageVerifier(PackageOptions.Checksum.OPTS.SHA512);
         nihmsVerifier = new NihmsPackageVerifier();
     }
 
+    /**
+     * {@inheritDoc}
+     * <h4>Implementation note</h4>
+     * Uses the name of the package archive to choose which {@code PackageVerifier} to return.  The runtime
+     * configuration of Deposit Services places NIH/PMC packages in one directory, and DSpace packages in another.
+     *
+     * @param depositSubmission {@inheritDoc}
+     * @param explodedPackage {@inheritDoc}
+     * @return {@inheritDoc}
+     */
     @Override
     protected PackageVerifier getVerifier(DepositSubmission depositSubmission, ExplodedPackage explodedPackage) {
         if (explodedPackage.getPackageFile().toString().contains("pmc")) {
@@ -74,11 +109,29 @@ public class PlaceholderIT extends SubmitAndValidatePackagesIT {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * <h4>Implementation note</h4>
+     * Hard-codes the return because this class is knowledgeable of the runtime configuration used by Docker for
+     * Deposit Services.
+     *
+     * @param packageFile
+     * @return
+     */
     @Override
     protected PackageOptions.Compression.OPTS sniffCompression(File packageFile) {
         return PackageOptions.Compression.OPTS.NONE;
     }
 
+    /**
+     * {@inheritDoc}
+     * <h4>Implementation note</h4>
+     * Hard-codes the return because this class is knowledgeable of the runtime configuration used by Docker for
+     * Deposit Services.
+     *
+     * @param packageFile
+     * @return
+     */
     @Override
     protected PackageOptions.Archive.OPTS sniffArchive(File packageFile) {
         return PackageOptions.Archive.OPTS.ZIP;
