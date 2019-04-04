@@ -124,11 +124,15 @@
                                     </run>
                                 </image>
                                 <image>
-                                    <!-- IT image derived from production image: build, and run for ITs -->
-                                    <!-- This container is not exposed to the IT runtime; ITs submit content to Fedora
-                                         and inspect the generated packages -->
+                                    <!-- IT image derived from production image above: used to build, and provides the
+                                         Deposit Services runtime for ITs -->
+                                    <!-- This container is not exposed to the IT runtime; ITs only communicate with
+                                         Fedora; they submit content to Fedora and inspect the generated packages
+                                         created by this image -->
                                     <name>providers/provider-integration-its</name>
                                     <build>
+                                        <!-- Adds our runtime configuration which uses the Filesystem Tranpsort, and
+                                             creates a directory for written packages -->
                                         <dockerFile>Dockerfile-ITs</dockerFile>
                                     </build>
                                     <run>
@@ -137,6 +141,8 @@
                                         </network>
                                         <volumes>
                                             <bind>
+                                                <!-- packages written by deposit services will be visible under
+                                                     'target/packages' -->
                                                 <volume>${project.build.directory}/packages:/packages</volume>
                                             </bind>
                                         </volumes>
