@@ -124,11 +124,15 @@
                                     </run>
                                 </image>
                                 <image>
-                                    <!-- IT image derived from production image: build, and run for ITs -->
-                                    <!-- This container is not exposed to the IT runtime; ITs submit content to Fedora
-                                         and inspect the generated packages -->
+                                    <!-- IT image derived from production image above: used to build, and provides the
+                                         Deposit Services runtime for ITs -->
+                                    <!-- This container is not exposed to the IT runtime; ITs only communicate with
+                                         Fedora; they submit content to Fedora and inspect the generated packages
+                                         created by this image -->
                                     <name>providers/provider-integration-its</name>
                                     <build>
+                                        <!-- Adds our runtime configuration which uses the Filesystem Tranpsort, and
+                                             creates a directory for written packages -->
                                         <dockerFile>Dockerfile-ITs</dockerFile>
                                     </build>
                                     <run>
@@ -137,7 +141,13 @@
                                         </network>
                                         <volumes>
                                             <bind>
+                                                <!-- packages written by deposit services will be visible under
+                                                     'target/packages' -->
                                                 <volume>${project.build.directory}/packages:/packages</volume>
+
+                                                <!-- overwrite /etc/hosts with an empty file, so that the alias
+                                                     'localhost' resolves to the fcrepo container -->
+                                                <volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>
                                             </bind>
                                         </volumes>
                                         <env>
@@ -150,20 +160,6 @@
                                             <PASS_FEDORA_PASSWORD>${pass.fedora.password}</PASS_FEDORA_PASSWORD>
                                             <PASS_FEDORA_BASEURL>${pass.fedora.baseurl}</PASS_FEDORA_BASEURL>
                                         </env>
-                                    </run>
-                                </image>
-
-                                <!-- Assets -->
-
-                                <image>
-                                    <name>${docker.assets.version}</name>
-                                    <alias>assets</alias>
-                                    <run>
-                                        <volumes>
-                                            <bind>
-                                                <volume>/data</volume>
-                                            </bind>
-                                        </volumes>
                                     </run>
                                 </image>
 
@@ -188,7 +184,7 @@
                                             <port>${fcrepo.stomp.port}:${fcrepo.stomp.port}</port>
                                         </ports>
                                         <env>
-                                            <FCREPO_HOME>/data</FCREPO_HOME>
+                                            <FCREPO_HOME>/usr/local/tomcat/fcrepo4-data</FCREPO_HOME>
                                             <FCREPO_HOST>fcrepo</FCREPO_HOST>
                                             <FCREPO_PORT>${fcrepo.http.port}</FCREPO_PORT>
                                             <FCREPO_JMS_PORT>${fcrepo.jms.port}</FCREPO_JMS_PORT>
@@ -199,12 +195,8 @@
                                         <network>
                                             <name>its</name>
                                             <alias>fcrepo</alias>
+                                            <alias>localhost</alias>
                                         </network>
-                                        <volumes>
-                                            <from>
-                                                <image>assets</image>
-                                            </from>
-                                        </volumes>
                                     </run>
                                 </image>
                                 <image>
@@ -224,18 +216,12 @@
                                         <env>
                                             <discovery.type>single-node</discovery.type>
                                             <bootstrap.memory_lock>true</bootstrap.memory_lock>
-                                            <path.data>/data</path.data>
                                             <ES_JAVA_OPTS>-Xms512m -Xmx512m</ES_JAVA_OPTS>
                                         </env>
                                         <network>
                                             <name>its</name>
                                             <alias>elasticsearch</alias>
                                         </network>
-                                        <volumes>
-                                            <from>
-                                                <image>assets</image>
-                                            </from>
-                                        </volumes>
                                     </run>
                                 </image>
                                 <image>
@@ -253,11 +239,17 @@
                                             <PI_FEDORA_JMS_QUEUE>fedora</PI_FEDORA_JMS_QUEUE>
                                             <PI_TYPE_PREFIX>http://oapass.org/ns/pass#</PI_TYPE_PREFIX>
                                             <PI_LOG_LEVEL>DEBUG</PI_LOG_LEVEL>
+                                            <PI_ES_CONFIG>/app/esconfig/esconfig-3.4.json</PI_ES_CONFIG>
                                         </env>
                                         <network>
                                             <name>its</name>
                                             <alias>indexer</alias>
                                         </network>
+                                        <volumes>
+                                            <bind>
+                                                <volume>${project.build.testOutputDirectory}/esconfig:/app/esconfig</volume>
+                                            </bind>
+                                        </volumes>
                                     </run>
                                 </image>
                             </images>
