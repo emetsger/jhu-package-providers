@@ -90,15 +90,10 @@ public class MetadataTest {
         // Create XML DOM for DSpace metadata from deposit services data model
         Element qdc = domWriter.createDublinCoreMetadataDCMES(depositSubmission);
 
-        // Publisher name in "crossref" has precedence over one in "common".
-        assertNotNull(qdc.getElementsByTagNameNS(DC_NS, DC_PUBLISHER).item(0).getTextContent());
-        assertEquals("Springer", qdc.getElementsByTagNameNS(DC_NS, DC_PUBLISHER).item(0).getTextContent());
-
         // In citation, use "et al" for more than three authors.
         // Publication date in "crossref" has precedence over one in "common".
         assertNotNull(qdc.getElementsByTagNameNS(DCTERMS_NS, DCT_BIBLIOCITATION).item(0).getTextContent());
-        String foo = qdc.getElementsByTagNameNS(DCTERMS_NS, DCT_BIBLIOCITATION).item(0).getTextContent();
-        assertEquals("Christine Cagney, Mary Beth Lacey, David Michael Starsky, et al. (Spring 2018). \"My Test Article.\" Nature Communications.",
+        assertEquals("Christine Cagney, Mary Beth Lacey, David Michael Starsky, et al. (Fall 2016). \"My Test Article.\" Nature Communications.",
                 qdc.getElementsByTagNameNS(DCTERMS_NS, DCT_BIBLIOCITATION).item(0).getTextContent());
     }
 }
