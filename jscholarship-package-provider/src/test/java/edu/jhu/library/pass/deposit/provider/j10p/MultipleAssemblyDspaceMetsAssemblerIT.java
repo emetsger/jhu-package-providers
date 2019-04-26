@@ -18,17 +18,15 @@ package edu.jhu.library.pass.deposit.provider.j10p;
 import org.dataconservancy.pass.deposit.DepositTestUtil;
 import org.dataconservancy.pass.deposit.assembler.Assembler;
 import org.dataconservancy.pass.deposit.assembler.PackageStream;
-import org.dataconservancy.pass.deposit.assembler.shared.ExceptionHandlingThreadPoolExecutor;
-import org.dataconservancy.pass.deposit.builder.fs.SharedSubmissionUtil;
+import org.dataconservancy.pass.deposit.builder.fs.FilesystemModelBuilder;
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import resources.SharedSubmissionUtil;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.net.URI;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import static edu.jhu.library.pass.deposit.provider.j10p.DspaceDepositTestUtil.getMetsXml;
 import static org.dataconservancy.pass.deposit.DepositTestUtil.packageFile;
@@ -47,7 +45,7 @@ public class MultipleAssemblyDspaceMetsAssemblerIT extends BaseDspaceMetsAssembl
 
     @Override
     public void setUp() throws Exception {
-        // override so that super class methods do nothing
+        builder = new FilesystemModelBuilder();
     }
 
     /**
