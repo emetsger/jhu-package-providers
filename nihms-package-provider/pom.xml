@@ -64,12 +64,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring-framework.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>deposit-model</artifactId>
             <version>${deposit-services.version}</version>
@@ -88,6 +82,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>shared-assembler</artifactId>
             <version>${deposit-services.version}</version>
@@ -96,18 +100,17 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>shared-resources</artifactId>
+            <version>${deposit-services.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>fedora-builder</artifactId>
+            <version>${deposit-services.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -129,46 +132,12 @@
         </dependency>
 
         <dependency>
-            <groupId>io.github.lukehutch</groupId>
-            <artifactId>fast-classpath-scanner</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-core</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.dataconservancy.pass.deposit</groupId>
-            <artifactId>fedora-builder</artifactId>
-            <version>${deposit-services.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-            <type>test-jar</type>
-        </dependency>
 
-        <dependency>
-            <groupId>org.dataconservancy.pass.deposit</groupId>
-            <artifactId>shared-resources</artifactId>
-            <version>${deposit-services.version}</version>
-            <scope>test</scope>
-            <classifier>tests</classifier>
-            <type>test-jar</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.dataconservancy.pass.deposit</groupId>
-            <artifactId>fedora-builder</artifactId>
-            <version>${deposit-services.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.thoughtworks.xstream</groupId>
-            <artifactId>xstream</artifactId>
-        </dependency>
 
     </dependencies>
 
