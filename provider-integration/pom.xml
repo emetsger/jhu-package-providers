@@ -239,7 +239,7 @@
                                             <PI_FEDORA_JMS_QUEUE>fedora</PI_FEDORA_JMS_QUEUE>
                                             <PI_TYPE_PREFIX>http://oapass.org/ns/pass#</PI_TYPE_PREFIX>
                                             <PI_LOG_LEVEL>DEBUG</PI_LOG_LEVEL>
-                                            <PI_ES_CONFIG>/app/esconfig/esconfig-3.4.json</PI_ES_CONFIG>
+                                            <PI_ES_CONFIG>/app/esconfig-3.4.json</PI_ES_CONFIG>
                                         </env>
                                         <network>
                                             <name>its</name>
