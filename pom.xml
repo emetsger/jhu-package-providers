@@ -122,7 +122,7 @@
         <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
         <maven.dependency.plugin.version>3.1.1</maven.dependency.plugin.version>
         <codehaus.build-helper.plugin.version>1.10</codehaus.build-helper.plugin.version>
-        <fabric8.docker.maven.plugin.version>0.28.0</fabric8.docker.maven.plugin.version>
+        <fabric8.docker.maven.plugin.version>0.30.0</fabric8.docker.maven.plugin.version>
         <git-commit-plugin.version>2.2.4</git-commit-plugin.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback-classic.version>1.2.3</logback-classic.version>
