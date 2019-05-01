@@ -248,6 +248,9 @@
                                         <volumes>
                                             <bind>
                                                 <volume>${project.build.testOutputDirectory}/esconfig:/app/esconfig</volume>
+                                                <!-- overwrite /etc/hosts with an empty file, so that the alias
+                                                     'localhost' resolves to the fcrepo container -->
+                                                <volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>
                                             </bind>
                                         </volumes>
                                     </run>
