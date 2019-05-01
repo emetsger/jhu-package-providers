@@ -160,7 +160,7 @@
         <docker.deposit-services-core.version>oapass/deposit-services-core:0.2.0-3.2-SNAPSHOT</docker.deposit-services-core.version>
         <docker.assets.version>birkland/assets@sha256:60310d68c7ab910096f471bf6636b35487c52ab6db970fc280959f49eec0f465</docker.assets.version>
 
-        <pass.jsonld.context>https://oa-pass.github.io/pass-data-model/src/main/resources/context-3.2.jsonld</pass.jsonld.context>
+        <pass.jsonld.context>https://oa-pass.github.io/pass-data-model/src/main/resources/context-3.4.jsonld</pass.jsonld.context>
 
     </properties>
 
