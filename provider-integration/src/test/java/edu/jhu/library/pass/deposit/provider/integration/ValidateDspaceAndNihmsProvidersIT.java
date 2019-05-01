@@ -54,11 +54,10 @@ import static org.junit.Assert.fail;
  *
  * @author Elliot Metsger (emetsger@jhu.edu)
  */
-@RunWith(SpringRunner.class)
 @ContextConfiguration(classes = SpringContextConfiguration.class)
-public class ValidateDspaceAndNihmsProviders extends SubmitAndValidatePackagesIT {
+public class ValidateDspaceAndNihmsProvidersIT extends SubmitAndValidatePackagesIT {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ValidateDspaceAndNihmsProviders.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ValidateDspaceAndNihmsProvidersIT.class);
 
     // Meta TODO: review below TODOs for accuracy/need
 

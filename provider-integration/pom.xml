@@ -248,6 +248,9 @@
                                         <volumes>
                                             <bind>
                                                 <volume>${project.build.testOutputDirectory}/esconfig:/app/esconfig</volume>
+                                                <!-- overwrite /etc/hosts with an empty file, so that the alias
+                                                     'localhost' resolves to the fcrepo container -->
+                                                <volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>
                                             </bind>
                                         </volumes>
                                     </run>
@@ -279,6 +282,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <failIfNoTests>true</failIfNoTests>
                     <systemProperties>
                         <pass.fedora.user>${pass.fedora.user}</pass.fedora.user>
                         <pass.fedora.password>${pass.fedora.password}</pass.fedora.password>
@@ -330,8 +334,6 @@
             <artifactId>shared-resources</artifactId>
             <version>${deposit-services.version}</version>
             <scope>test</scope>
-            <type>test-jar</type>
-            <classifier>tests</classifier>
         </dependency>
 
         <dependency>
