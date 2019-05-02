@@ -427,7 +427,7 @@
             <dependency>
                 <groupId>org.dataconservancy.pass.deposit</groupId>
                 <artifactId>deposit-parent</artifactId>
-                <version>0.2.0-3.2-SNAPSHOT</version>
+                <version>${deposit-services.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
