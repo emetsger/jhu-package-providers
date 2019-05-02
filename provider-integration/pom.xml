@@ -115,7 +115,7 @@
                             <images>
                                 <image>
                                     <!-- Production image: built, but not run -->
-                                    <name>providers/provider-integration</name>
+                                    <name>oapass/deposit-services-providers:${project.parent.version}</name>
                                     <build>
                                         <dockerFile>Dockerfile</dockerFile>
                                     </build>
@@ -129,7 +129,7 @@
                                     <!-- This container is not exposed to the IT runtime; ITs only communicate with
                                          Fedora; they submit content to Fedora and inspect the generated packages
                                          created by this image -->
-                                    <name>providers/provider-integration-its</name>
+                                    <name>oapass/deposit-services-providers-its:${project.parent.version}</name>
                                     <build>
                                         <!-- Adds our runtime configuration which uses the Filesystem Tranpsort, and
                                              creates a directory for written packages -->
@@ -273,6 +273,14 @@
                         </goals>
                         <configuration>
                             <retries>5</retries>
+                            <images>
+                                <image>
+                                    <name>oapass/deposit-services-providers:${project.parent.version}</name>
+                                    <build>
+                                        <skip>true</skip>
+                                    </build>
+                                </image>
+                            </images>
                         </configuration>
                     </execution>
                 </executions>
