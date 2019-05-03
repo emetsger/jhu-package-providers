@@ -4,6 +4,8 @@
   <manuscript id="00001" publisher_pdf="yes" show_publisher_pdf="no" href="http://farm.com/Cows" doi="10.1234/smh0000001"/>
   <journal-meta>
     <journal-id journal-id-type="nlm-ta">FJ001</journal-id>
+    <issn pub-type="epub">8765-4321</issn>
+    <issn pub-type="ppub">0000-0000</issn>
     <issn pub-type="epub">1234-5678</issn>
     <journal-title>Dairy Cow Monthly</journal-title>
   </journal-meta>

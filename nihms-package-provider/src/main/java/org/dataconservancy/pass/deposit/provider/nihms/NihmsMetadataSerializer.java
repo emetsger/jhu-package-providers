@@ -26,6 +26,7 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
 import org.dataconservancy.pass.deposit.assembler.shared.SizedStream;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
+import org.dataconservancy.pass.deposit.model.JournalPublicationType;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -109,7 +110,13 @@ public class NihmsMetadataSerializer implements StreamingSerializer {
 
                 journal.getIssnPubTypes().values().forEach(issnPubType -> {
                     writer.startNode("issn");
-                    writer.addAttribute("pub-type", issnPubType.pubType.name().toLowerCase());
+                    // The JournalPublicationType OPUB should be translated to JournalPublicationType EPUB to stay
+                    // valid with respect to the NIHMS metadata schema
+                    if (issnPubType.pubType == JournalPublicationType.OPUB) {
+                        writer.addAttribute("pub-type", JournalPublicationType.EPUB.name().toLowerCase());
+                    } else {
+                        writer.addAttribute("pub-type", issnPubType.pubType.name().toLowerCase());
+                    }
                     writer.setValue(issnPubType.issn);
                     writer.endNode();
                 });
