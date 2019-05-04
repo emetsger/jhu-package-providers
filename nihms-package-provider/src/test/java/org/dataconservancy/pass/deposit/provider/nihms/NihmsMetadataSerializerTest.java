@@ -64,7 +64,11 @@ public class NihmsMetadataSerializerTest {
         journal.setJournalTitle("Dairy Cow Monthly");
         journal.setIssnPubTypes(new HashMap<String, DepositMetadata.IssnPubType>() {
             {
-                put("1234-5678", new DepositMetadata.IssnPubType("1234-5678", JournalPublicationType.EPUB));
+                put("8765-4321", new DepositMetadata.IssnPubType("8765-4321", JournalPublicationType.EPUB));
+                // OPUB publication type should be expressed as an EPUB in the resulting metadata per the NIHMS
+                // bulk submission metadata requirements
+                put("1234-5678", new DepositMetadata.IssnPubType("1234-5678", JournalPublicationType.OPUB));
+                put("0000-0000", new DepositMetadata.IssnPubType("0000-0000", JournalPublicationType.PPUB));
             }
         });
 

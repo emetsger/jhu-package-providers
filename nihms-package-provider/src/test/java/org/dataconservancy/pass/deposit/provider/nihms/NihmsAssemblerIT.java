@@ -29,6 +29,7 @@ import org.dataconservancy.pass.deposit.model.DepositFile;
 import org.dataconservancy.pass.deposit.model.DepositFileType;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
 import org.dataconservancy.pass.deposit.model.DepositMetadata.Person;
+import org.dataconservancy.pass.deposit.model.JournalPublicationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -246,9 +247,16 @@ public class NihmsAssemblerIT extends BaseAssemblerIT {
         assertEquals(issnPubTypes.size(), issns.size());
         assertTrue(issnPubTypes.size() > 0);
 
-        issnPubTypes.values().forEach(issnPubType -> {
-            assertTrue(issns.stream().anyMatch(element -> element.getTextContent().equals(issnPubType.issn) && element.getAttribute("pub-type").equals(issnPubType.pubType.name().toLowerCase())));
+        issns.forEach(issn -> assertTrue(issnPubTypes.containsKey(issn.getTextContent())));
+        issns.forEach(issn -> {
+            DepositMetadata.IssnPubType pubType = issnPubTypes.get(issn.getTextContent());
+            if (pubType.pubType == JournalPublicationType.OPUB) {
+                assertEquals(issn.getAttribute("pub-type"), JournalPublicationType.EPUB.name().toLowerCase());
+            } else {
+                assertEquals(issn.getAttribute("pub-type"), pubType.pubType.name().toLowerCase());
+            }
         });
+
     }
 
     /**
