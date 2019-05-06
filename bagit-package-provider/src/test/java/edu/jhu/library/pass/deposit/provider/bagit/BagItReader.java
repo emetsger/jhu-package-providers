@@ -1,0 +1,188 @@
+/*
+ * Copyright 2019 Johns Hopkins University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.jhu.library.pass.deposit.provider.bagit;
+
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+/**
+ * Reads BagIt metadata - bag declaration ({@code bagit.txt}), manifests, and bag metadata ({@code bag-info.txt}) - well
+ * enough to support testing.
+ *
+ * @author Elliot Metsger (emetsger@jhu.edu)
+ */
+public class BagItReader {
+
+    private static final String SEP_SPACE = " ";
+
+    private static final String SEP_TAB = "\t";
+
+    private static final String LABEL_SEP_SPACE = ": ";
+
+    private static final String LABEL_SEP_TAB = ":\t";
+
+    private Charset charset;
+
+    public BagItReader(Charset charset) {
+        this.charset = charset;
+    }
+
+    /**
+     * Keyed by label name
+     * @param bagDeclaration
+     * @return
+     */
+    LinkedHashMap<String, String> readBagDecl(InputStream bagDeclaration) {
+        List<String> lines = null;
+        try {
+            lines = IOUtils.readLines(bagDeclaration, UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        LinkedHashMap<String, List<String>> entriesAndValues = parseLines(lines);
+        return entriesAndValues
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().get(0),
+                        (entry1, entry2) -> {
+                            // merge function should never be invoked
+                            throw new RuntimeException("Duplicate label: " + entry1);
+                            },
+                        LinkedHashMap::new));
+    }
+
+    /**
+     * Keyed by path, value is checksum
+     * @param manifest
+     * @return
+     */
+    LinkedHashMap<String, String> readManifest(InputStream manifest) {
+        List<String> lines = null;
+        try {
+            lines = IOUtils.readLines(manifest, charset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        LinkedHashMap<String, String> entriesAndValues = parseManifestLines(lines);
+        return entriesAndValues;
+    }
+
+    /**
+     * Answers a list of labels in encounter order from {@code bag-info.txt}.  Labels may repeat.
+     * <p>
+     * Parsing relies on a properly formatted {@code bag-info.txt}, specifically that labels terminate with a colon and
+     * single whitespace character (tab or space).
+     * </p>
+     *
+     * @param bagInfo InputStream to a {@code bag-info.txt}
+     * @return the labels in encounter order
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.2.2">RFC 8493 §2.2.2</a>
+     */
+    List<String> readLabels(InputStream bagInfo) {
+        List<String> lines = null;
+        try {
+            lines = IOUtils.readLines(bagInfo, charset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return lines.stream()
+                .filter(line -> line.contains(LABEL_SEP_SPACE) || line.contains(LABEL_SEP_TAB))
+                .map(line -> {
+                    if (line.contains(LABEL_SEP_SPACE)) {
+                        return line.substring(0, line.indexOf(LABEL_SEP_SPACE));
+                    }
+
+                    return line.substring(0, line.indexOf(LABEL_SEP_TAB));
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Answers a list of labels and their values in encounter order from {@code bag-info.txt}.  Labels will not repeat,
+     * but multiple values for a label will be collected in encounter order.
+     * <p>
+     * Parsing relies on a properly formatted {@code bag-info.txt}, specifically that labels terminate with a colon and
+     * single whitespace character (tab or space).
+     * </p>
+     *
+     * @param bagInfo InputStream to a {@code bag-info.txt}
+     * @return the labels and their values in encounter order
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.2.2">RFC 8493 §2.2.2</a>
+     */
+    LinkedHashMap<String, List<String>> readLabelsAndValues(InputStream bagInfo) {
+        List<String> lines = null;
+        try {
+            lines = IOUtils.readLines(bagInfo, charset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return parseLines(lines);
+    }
+
+    private LinkedHashMap<String, List<String>> parseLines(List<String> lines) {
+        return lines.stream()
+                .filter(line -> line.contains(LABEL_SEP_SPACE) || line.contains(LABEL_SEP_TAB))
+                .collect(Collectors.toMap(line -> {
+                    if (line.contains(LABEL_SEP_SPACE)) {
+                        return line.substring(0, line.indexOf(LABEL_SEP_SPACE));
+                    }
+
+                    return line.substring(0, line.indexOf(LABEL_SEP_TAB));
+                }, line -> {
+                    String value;
+                    if (line.contains(LABEL_SEP_SPACE)) {
+                        value = line.substring(line.indexOf(LABEL_SEP_SPACE) + LABEL_SEP_SPACE.length());
+                    } else {
+                        value = line.substring(line.indexOf(LABEL_SEP_TAB) + LABEL_SEP_TAB.length());
+                    }
+                    ArrayList<String> list = new ArrayList(1);
+                    list.add(value);
+                    return list;
+                }, (value1, value2) -> {
+                    value1.addAll(value2);
+                    return value1;
+                }, LinkedHashMap::new));
+    }
+
+    private LinkedHashMap<String, String> parseManifestLines(List<String> lines) {
+        return lines.stream()
+                .filter(line -> line.contains(SEP_SPACE) || line.contains(SEP_TAB))
+                .collect(Collectors.toMap(line -> {
+                    String[] result = line.split("\\h");
+                    return result[result.length - 1];
+                }, line -> {
+                    return line.split("\\h")[0];
+                }, (value1, value2) -> {
+                    // merge function should never be invoked, as each line should have a unique path
+                    throw new RuntimeException("Duplicate file path in manifest: " + value1);
+                }, LinkedHashMap::new));
+    }
+
+
+}
