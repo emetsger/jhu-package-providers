@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.MessageDigestCalculatingInputStream;
 import org.apache.commons.io.output.NullOutputStream;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions;
+import org.dataconservancy.pass.deposit.assembler.PackageOptions.Checksum;
 import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.model.DepositFile;
@@ -50,10 +51,18 @@ public class BagItPackageVerifier implements PackageVerifier {
 
     private Charset expectedEncoding = UTF_8;
 
+    /**
+     * Verifies packages with a UTF-8 reader.
+     */
     public BagItPackageVerifier() {
         this.reader = new BagItReader(expectedEncoding);
     }
 
+    /**
+     * Verifies packages with the supplied reader.
+     *
+     * @param reader the reader, which may use an encoding other than UTF-8
+     */
     public BagItPackageVerifier(BagItReader reader) {
         this.reader = reader;
     }
@@ -99,8 +108,7 @@ public class BagItPackageVerifier implements PackageVerifier {
         //   Every file in the payload is found in the manifest
         //   Every entry in the manifest is present in the payload
         //   The checksum in the manifest matches the calculated checksum
-        List<PackageOptions.Checksum.OPTS> checksums = (List<PackageOptions.Checksum.OPTS>)
-                map.get(PackageOptions.Checksum.KEY);
+        List<Checksum.OPTS> checksums = (List<Checksum.OPTS>) map.get(Checksum.KEY);
         // must be at least one checksum specified in the package options
         assertTrue("Package options must specify at least one checksum.", checksums.size() > 0);
         checksums.forEach(algorithm -> {
@@ -119,6 +127,12 @@ public class BagItPackageVerifier implements PackageVerifier {
 
     }
 
+    /**
+     * Simply asserts that the {@code bag-info.txt} is present and contains at least one entry.
+     *
+     * @param bagInfo the {@code bag-info.txt} file
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.2.2">RFC 8439 §2.2.2</a>
+     */
     protected void verifyBagInfo(File bagInfo) {
         Map<String, List<String>> entries;
 
@@ -132,6 +146,18 @@ public class BagItPackageVerifier implements PackageVerifier {
         assertTrue(entries.size() > 0);
     }
 
+    /**
+     * Verifies:
+     * <ul>
+     *     <li>the bag declaration exists</li>
+     *     <li>verifies the expected value of the BagIt-Version element</li>
+     *     <li>verifies the expected value of the Tag-File-Character-Encoding element</li>
+     * </ul>
+     *
+     * @param bagDecl the bag declaration, {@code bagit.txt}
+     * @param expectedVersion the expected version of BagIt to be found in the declaration
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.1.1">RFC 8493 §2.1.1</a>
+     */
     protected void verifyBagDecl(File bagDecl, String expectedVersion) {
         Map<String, String> entries;
         try {
@@ -141,13 +167,26 @@ public class BagItPackageVerifier implements PackageVerifier {
         }
 
         assertEquals(expectedVersion, entries.get(BagMetadata.BAGIT_VERSION));
-
         assertEquals(expectedEncoding.name(), entries.get(BagMetadata.TAG_FILE_ENCODING));
-
-
     }
 
-    protected void verifyManifest(List<DepositFile> payload, File packageDir, File manifestFile, PackageOptions.Checksum.OPTS algo) {
+    /**
+     * Verifies:
+     * <ul>
+     *     <li>the manifest file exists</li>
+     *     <li>the name of the manifest file is correct</li>
+     *     <li>each payload file is present in the manifest</li>
+     *     <li>each file in the manifest is present in the payload</li>
+     *     <li>the checksum of each file in the manifest</li>
+     * </ul>
+     *
+     * @param payload the custodial content of the submission, expected to be present in the BagIt payload
+     * @param packageDir the base directory of the exploded package
+     * @param manifestFile the manifest file whose contents are to be verified
+     * @param algo the checksum algorithm used by the manifest file
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.1.3">RFC 8439 §2.1.3</a>
+     */
+    protected void verifyManifest(List<DepositFile> payload, File packageDir, File manifestFile, Checksum.OPTS algo) {
 
         // Insure the manifest file exists
         assertTrue(manifestFile.exists());
@@ -170,12 +209,14 @@ public class BagItPackageVerifier implements PackageVerifier {
                     df.getLocation().substring(df.getLocation().lastIndexOf("/"));
             File expectedPayloadFile = new File(packageDir, relative);
             assertTrue(expectedPayloadFile.exists());
-            assertTrue("Missing file '" + relative + "' from the manifest.", manifest.containsKey(relative));
+            assertTrue("Missing file '" + relative + "' from the manifest (package directory: " + packageDir + "')", manifest.containsKey(relative));
         });
 
         // make sure each file in the manifest is present in the payload
+        // insure each file belongs to the payload directory
         manifest.keySet().forEach(expectedPayloadFile -> {
             assertTrue(new File(packageDir, expectedPayloadFile).exists());
+            assertTrue(expectedPayloadFile.startsWith(BagItPackageProvider.PAYLOAD_DIR));
         });
 
         // verify checksum of each payload file in the manifest
@@ -195,8 +236,16 @@ public class BagItPackageVerifier implements PackageVerifier {
 
     }
 
+    /**
+     * Returns a {@link MessageDigestCalculatingInputStream} by mapping the supplied checksum algorithm to a
+     * {@link MessageDigest}.
+     *
+     * @param payloadFile the payload file to calculate a checksum over
+     * @param checksumAlgo the algorithm to use, must be mapped to a Java MessageDigest
+     * @return an InputStream that will calculate a checksum for the supplied InputStream
+     */
     private static MessageDigestCalculatingInputStream checksumCalculatorFor(InputStream payloadFile,
-                                                                           PackageOptions.Checksum.OPTS checksumAlgo) {
+                                                                           Checksum.OPTS checksumAlgo) {
         MessageDigest md;
 
         try {

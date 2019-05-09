@@ -51,9 +51,15 @@ public class BagItReader {
     }
 
     /**
-     * Keyed by label name
-     * @param bagDeclaration
-     * @return
+     * Reads the Bag declaration ({@code bagit.txt}) and returns a Map of key value pairs in encounter order.
+     * <p>
+     * Note: the reader will always use UTF-8 when reading the declaration InputStream, regardless of the character
+     * set supplied on reader construction.
+     * </p>
+     *
+     * @param bagDeclaration the InputStream to the Bag declaration ({@code bagit.txt})
+     * @return a Map of key value pairs in encounter order
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.1.1">RFC 8493 §2.1.1</a>
      */
     LinkedHashMap<String, String> readBagDecl(InputStream bagDeclaration) {
         List<String> lines = null;
@@ -76,9 +82,11 @@ public class BagItReader {
     }
 
     /**
-     * Keyed by path, value is checksum
-     * @param manifest
-     * @return
+     * Reads a manifest (e.g. {@code manifest-sha512.txt}) and returns a Map of key value pairs, where the key is the
+     * file path in the manifest, and values are checksums.
+     *
+     * @param manifest the manifest InputStream
+     * @return Map of checksums keyed by the file path, in encounter order
      */
     LinkedHashMap<String, String> readManifest(InputStream manifest) {
         List<String> lines = null;
