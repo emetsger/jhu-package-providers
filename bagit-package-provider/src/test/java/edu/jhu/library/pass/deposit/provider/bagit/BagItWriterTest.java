@@ -92,42 +92,78 @@ public class BagItWriterTest {
     }
 
     @Test
-    public void encodeNoop() {
+    public void encodeLineNoop() {
+        assertEquals("foo", BagItWriter.encodeLine("foo"));
+    }
+
+    @Test
+    public void encodeLineCrAtStart() {
+        assertEquals(CR_ENCODED + "foo", BagItWriter.encodeLine(CR + "foo"));
+    }
+
+    @Test
+    public void encodeLineCrAtEnd() {
+        assertEquals("foo" + CR, BagItWriter.encodeLine("foo" + CR));
+    }
+
+    @Test
+    public void encodeLineLfAtEnd() {
+        assertEquals("foo" + LF, BagItWriter.encodeLine("foo" + LF));
+    }
+
+    @Test
+    public void encodeLineCrLfAtEnd() {
+        assertEquals("foo" + CR + LF, BagItWriter.encodeLine("foo" + CR + LF));
+    }
+
+    @Test
+    public void encodeLineCrLf() {
+        assertEquals("foo" + CR_ENCODED + LF_ENCODED + "bar",
+                BagItWriter.encodeLine("foo" + CR + LF + "bar"));
+    }
+
+    @Test
+    public void encodeLinePercentWithLfAtEnd() {
+        assertEquals(PERCENT_ENCODED + "foo" + PERCENT_ENCODED + LF,
+                BagItWriter.encodeLine(PERCENT + "foo" + PERCENT + LF));
+    }
+
+    @Test
+    public void encodePathNoop() {
         assertEquals("foo", BagItWriter.encodePath("foo"));
     }
 
     @Test
-    public void encodeCrAtStart() {
+    public void encodePathCrAtStart() {
         assertEquals(CR_ENCODED + "foo", BagItWriter.encodePath(CR + "foo"));
     }
 
     @Test
-    public void encodeCrAtEnd() {
-        assertEquals("foo" + CR, BagItWriter.encodePath("foo" + CR));
+    public void encodePathCrAtEnd() {
+        assertEquals("foo" + CR_ENCODED, BagItWriter.encodePath("foo" + CR));
     }
 
     @Test
-    public void encodeLfAtEnd() {
-        assertEquals("foo" + LF, BagItWriter.encodePath("foo" + LF));
+    public void encodePathLfAtEnd() {
+        assertEquals("foo" + LF_ENCODED, BagItWriter.encodePath("foo" + LF));
     }
 
     @Test
-    public void encodeCrLfAtEnd() {
-        assertEquals("foo" + CR + LF, BagItWriter.encodePath("foo" + CR + LF));
+    public void encodePathCrLfAtEnd() {
+        assertEquals("foo" + CR_ENCODED + LF_ENCODED, BagItWriter.encodePath("foo" + CR + LF));
     }
 
     @Test
-    public void encodeCrLf() {
+    public void encodePathCrLf() {
         assertEquals("foo" + CR_ENCODED + LF_ENCODED + "bar",
                 BagItWriter.encodePath("foo" + CR + LF + "bar"));
     }
 
     @Test
-    public void encodePercentWithLfAtEnd() {
-        assertEquals(PERCENT_ENCODED + "foo" + PERCENT_ENCODED + LF,
+    public void encodePathPercentWithLfAtEnd() {
+        assertEquals(PERCENT_ENCODED + "foo" + PERCENT_ENCODED + LF_ENCODED,
                 BagItWriter.encodePath(PERCENT + "foo" + PERCENT + LF));
     }
-
     @Test
     public void usesCharsetOnConstruction() throws IOException {
         // e with acute encoded as UTF-16 is 0x00E9

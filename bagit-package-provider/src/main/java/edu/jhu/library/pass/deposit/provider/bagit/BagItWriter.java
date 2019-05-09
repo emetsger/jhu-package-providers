@@ -97,20 +97,23 @@ public class BagItWriter {
      * @throws IOException
      */
     public void writeManifestLine(OutputStream out, String checksum, String filepath) throws IOException {
-        String encodedPath = encodePath(filepath);
+        String encodedPath = encodeLine(filepath);
         String line = String.format(MANIFEST_LINE, checksum, encodedPath);
         out.write(line.getBytes(charset));
     }
 
     /**
-     * Insures that a line (e.g. in a payload or tag manifest) properly encodes line feeds, carriage returns, and
-     * percent.  The supplied {@code line} may end with a CR, LF, or CRLF.  In that case, the ending character will
+     * Insures that a <em>line</em> (e.g. in a payload or tag manifest) properly encodes line feeds, carriage returns,
+     * and percent.  The supplied {@code line} may end with a CR, LF, or CRLF.  In that case, the ending character will
      * <em>not</em> be encoded.
+     * <p>
+     * Note: differs from {@link #encodePath(String)} with respect to treatment of line endings.
+     * </p>
      *
      * @param line the line to be encoded
      * @return the encoded line, preserving the ending CR, LF, or CRLF
      */
-    static String encodePath(String line) {
+    static String encodeLine(String line) {
 
         StringBuilder sb = new StringBuilder(line);
 
@@ -138,6 +141,44 @@ public class BagItWriter {
             }
 
             // Always encode PERCENT
+            if (candidate == PERCENT) {
+                sb.replace(offset, offset+1, PERCENT_ENCODED);
+                replacementOffset += PERCENT_ENCODED.length() - 1;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Insures that a <em>file path</em> (e.g. in a payload or tag manifest) properly encodes line feeds, carriage
+     * returns, and percent.  The supplied {@code path} may end with a CR, LF, or CRLF.  In that case, the ending
+     * character <em>will be</em> encoded.
+     * <p>
+     * Note: differs from {@link #encodeLine(String)} with respect to treatment of line endings.
+     * </p>
+     *
+     * @param path the file path to be encoded
+     * @return the encoded path
+     */
+    static String encodePath(String path) {
+        StringBuilder sb = new StringBuilder(path);
+
+        int replacementOffset = 0;
+
+        for (int i = 0, offset = 0; i < path.length(); i++, offset = (i + replacementOffset)) {
+            char candidate = path.charAt(i);
+
+            if (candidate == CR) {
+                sb.replace(offset, offset+1, CR_ENCODED);
+                replacementOffset += CR_ENCODED.length() - 1;
+            }
+
+            if (candidate == LF) {
+                sb.replace(offset, offset+1, LF_ENCODED);
+                replacementOffset += LF_ENCODED.length() - 1;
+            }
+
             if (candidate == PERCENT) {
                 sb.replace(offset, offset+1, PERCENT_ENCODED);
                 replacementOffset += PERCENT_ENCODED.length() - 1;

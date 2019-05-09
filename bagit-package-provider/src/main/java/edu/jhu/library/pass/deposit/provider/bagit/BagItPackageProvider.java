@@ -160,7 +160,7 @@ public class BagItPackageProvider implements PackageProvider {
     public String packagePath(DepositFileResource custodialResource) {
         // payload directory: https://www.rfc-editor.org/rfc/rfc8493.html#section-2.1.2
         try {
-            return String.format("%s/%s", PAYLOAD_DIR, custodialResource.getFilename());
+            return String.format("%s/%s", PAYLOAD_DIR, BagItWriter.encodePath(custodialResource.getFilename()));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
