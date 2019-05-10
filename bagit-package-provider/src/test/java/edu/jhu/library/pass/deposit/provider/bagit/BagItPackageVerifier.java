@@ -20,6 +20,7 @@ import org.apache.commons.io.input.MessageDigestCalculatingInputStream;
 import org.apache.commons.io.output.NullOutputStream;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions.Checksum;
+import org.dataconservancy.pass.deposit.assembler.shared.ChecksumImpl;
 import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.model.DepositFile;
@@ -33,6 +34,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -67,6 +69,28 @@ public class BagItPackageVerifier implements PackageVerifier {
         this.reader = reader;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation note: the supplied options {@code map} is empty.  See Javadoc for {@code
+     * SubmitAndValidatePackagesIT#verifyPackages}.  Basically, the {@code SubmitAndValidatePackagesIT} does not have
+     * access to the DS runtime configuration, so it cannot introspect the configuration, parse the assembler config,
+     * and provide the options.
+     * </p>
+     * <p>
+     * TODO: put the runtime configuration of Deposit Services in a well-known location (e.g. as a binary in Fedora)
+     *   whereby the {@code SubmitAndValidatePackagesIT} can find it and supply it to test methods.
+     * </p>
+     * <p>
+     * Until a workaround is implemented, this method will have to read the runtime configuration and parse the options
+     * for itself.
+     * </p>
+     *
+     * @param depositSubmission
+     * @param explodedPackage
+     * @param map
+     * @throws Exception
+     */
     @Override
     @SuppressWarnings("unchecked")
     public void verify(DepositSubmission depositSubmission, ExplodedPackage explodedPackage, Map<String, Object> map)
@@ -80,7 +104,7 @@ public class BagItPackageVerifier implements PackageVerifier {
         final BiFunction<File, File, DepositFile> MAPPER = (packageDir, payloadFile) -> {
             return depositSubmission.getFiles()
                     .stream()
-                    .filter(df -> df.getLocation().endsWith(payloadFile.getName()))
+                    .filter(df -> BagItWriter.encodePath(df.getLocation()).endsWith(payloadFile.getName()))
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Missing custodial file '" + payloadFile + "'"));
         };
@@ -108,7 +132,13 @@ public class BagItPackageVerifier implements PackageVerifier {
         //   Every file in the payload is found in the manifest
         //   Every entry in the manifest is present in the payload
         //   The checksum in the manifest matches the calculated checksum
-        List<Checksum.OPTS> checksums = (List<Checksum.OPTS>) map.get(Checksum.KEY);
+        List<Checksum.OPTS> checksums = null;
+        if (map == null || map.isEmpty()) {
+            checksums = Arrays.asList(Checksum.OPTS.SHA512, Checksum.OPTS.MD5);
+        } else {
+            checksums = (List<Checksum.OPTS>) map.get(Checksum.KEY);
+        }
+
         // must be at least one checksum specified in the package options
         assertTrue("Package options must specify at least one checksum.", checksums.size() > 0);
         checksums.forEach(algorithm -> {
@@ -189,7 +219,7 @@ public class BagItPackageVerifier implements PackageVerifier {
     protected void verifyManifest(List<DepositFile> payload, File packageDir, File manifestFile, Checksum.OPTS algo) {
 
         // Insure the manifest file exists
-        assertTrue(manifestFile.exists());
+        assertTrue("Missing expected manifest file '" + manifestFile + "'", manifestFile.exists());
 
         // verify name of the manifest file conforms to the spec
         assertEquals(String.format(BagItPackageProvider.PAYLOAD_MANIFEST_TMPL,
@@ -205,8 +235,9 @@ public class BagItPackageVerifier implements PackageVerifier {
 
         // make sure each payload file is represented in the manifest
         payload.forEach(df -> {
+            String encodedLocation = BagItWriter.encodePath(df.getLocation());
             String relative = BagItPackageProvider.PAYLOAD_DIR +
-                    df.getLocation().substring(df.getLocation().lastIndexOf("/"));
+                    encodedLocation.substring(encodedLocation.lastIndexOf("/"));
             File expectedPayloadFile = new File(packageDir, relative);
             assertTrue(expectedPayloadFile.exists());
             assertTrue("Missing file '" + relative + "' from the manifest (package directory: " + packageDir + "')", manifest.containsKey(relative));

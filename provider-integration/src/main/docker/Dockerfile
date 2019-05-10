@@ -4,7 +4,8 @@
 #
 FROM ${docker.deposit-services-core.version}
 FROM providers/jscholarship-package-provider:latest AS J10P
-FROM providers/nihms-package-provider:latest
+FROM providers/nihms-package-provider:latest AS NIHMS
+FROM providers/bagit-package-provider:latest
 
 LABEL version=${project.parent.version}
 LABEL commit=${git.commit.id.abbrev}
@@ -16,3 +17,4 @@ LABEL depositservices-image-version=${docker.deposit-services-core.version}
 LABEL depositservices-java-version=${deposit-services.version}
 
 COPY --from=J10P /app/BOOT-INF/lib/* /app/BOOT-INF/lib/
+COPY --from=NIHMS /app/BOOT-INF/lib/* /app/BOOT-INF/lib/

@@ -22,6 +22,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.CR;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.CR_ENCODED;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.LF;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.LF_ENCODED;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.PERCENT;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.PERCENT_ENCODED;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.IOUtils.toInputStream;
@@ -31,6 +37,21 @@ import static org.junit.Assert.*;
  * @author Elliot Metsger (emetsger@jhu.edu)
  */
 public class BagItReaderTest {
+
+    private static final String PERCENT_DOUBLE_ENCODED_SPACE = "%2520";
+
+    private static final String FILENAME_WITH_ENCODED_SPACE = "file%20with%20space";
+
+    private static final String FILENAME_WITH_LF = "file" + LF + "with" + LF + "lf";
+
+    private static final String FILENAME_WITH_ENCODED_LF = "file" + LF_ENCODED + "with" + LF_ENCODED + "lf";
+
+    private static final String FILENAME_WITH_CR = "file" + CR + "with" + CR + "lf";
+
+    private static final String FILENAME_WITH_ENCODED_CR = "file" + CR_ENCODED + "with" + CR_ENCODED + "lf";
+
+    private static final String FILENAME_WITH_DOUBLE_ENCODED_SPACE =
+            "file" + PERCENT_DOUBLE_ENCODED_SPACE + "with" + PERCENT_DOUBLE_ENCODED_SPACE + "space";
 
     /**
      * Sample {@code bag-info.txt}
@@ -77,7 +98,8 @@ public class BagItReaderTest {
             "hexchecksum_6 \tdata/path/to/file6.txt\n" +
             "hexchecksum_7 \t data/path/to/file7.txt\n" +
             "hexchecksum_8\t \tdata/path/to/file8.txt\n" +
-            "hexchecksum_1 data/path/to/file9.txt";
+            "hexchecksum_1 data/path/to/file9.txt\n" +
+            "hexchecksum_1 data/" + FILENAME_WITH_DOUBLE_ENCODED_SPACE + "\n";
 
     private BagItReader reader = new BagItReader(UTF_8);
 
@@ -117,7 +139,7 @@ public class BagItReaderTest {
     @Test
     public void readManifest() {
         Map<String, String> manifest = reader.readManifest(toInputStream(MANIFEST, UTF_8));
-        assertEquals(9, manifest.size());
+        assertEquals(10, manifest.size());
         assertEquals("hexchecksum_1", manifest.get("data/path/to/file.txt"));
         assertEquals("hexchecksum_2", manifest.get("data/path/to/file2.txt"));
         assertEquals("hexchecksum_3", manifest.get("data/path/to/file3.txt"));
@@ -127,6 +149,7 @@ public class BagItReaderTest {
         assertEquals("hexchecksum_7", manifest.get("data/path/to/file7.txt"));
         assertEquals("hexchecksum_8", manifest.get("data/path/to/file8.txt"));
         assertEquals("hexchecksum_1", manifest.get("data/path/to/file9.txt"));
+        assertEquals("hexchecksum_1", manifest.get("data/" + FILENAME_WITH_ENCODED_SPACE));
 
     }
 
@@ -166,5 +189,36 @@ public class BagItReaderTest {
                 "20190508T151013Z by Joe User (joeuser@user.com), published as 10.1039/c7fo01251a",
                 entry.getValue().get(0));
         assertEquals(1, entry.getValue().size());
+    }
+
+    @Test
+    public void decodePathWithDoubleEncodedSpace() {
+        assertEquals(FILENAME_WITH_ENCODED_SPACE, BagItReader.decodePath(FILENAME_WITH_DOUBLE_ENCODED_SPACE));
+    }
+
+    @Test
+    public void decodePathWithEncodedLf() {
+        assertEquals(FILENAME_WITH_LF, BagItReader.decodePath(FILENAME_WITH_ENCODED_LF));
+    }
+
+    @Test
+    public void decodePathWithEncodedCr() {
+        assertEquals(FILENAME_WITH_CR, BagItReader.decodePath(FILENAME_WITH_ENCODED_CR));
+    }
+
+    @Test
+    public void decodePathWithEndingCr() {
+        assertEquals("foo" + CR, BagItReader.decodePath("foo" + CR_ENCODED));
+    }
+
+    @Test
+    public void decodePathWithStartingCr() {
+        assertEquals(CR + "foo", BagItReader.decodePath(CR_ENCODED + "foo"));
+    }
+
+    @Test
+    public void decodeKitchenSink() {
+        assertEquals(PERCENT + "foo bar" + PERCENT + LF + "baz" + PERCENT,
+                BagItReader.decodePath(PERCENT_ENCODED + "foo bar" + PERCENT_ENCODED + LF_ENCODED + "baz" + PERCENT_ENCODED));
     }
 }

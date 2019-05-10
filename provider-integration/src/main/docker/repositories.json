@@ -52,5 +52,28 @@
         "overwrite": "false"
       }
     }
+  },
+  "BagIt": {
+    "assembler": {
+      "specification": "bagit-1.0",
+      "beanName": "bagItAssembler",
+      "options": {
+        "archive": "ZIP",
+        "compression": "NONE",
+        "algorithms": [
+          "sha512",
+          "md5"
+        ],
+        "baginfo-template-resource": "/bag-info.hbm"
+      }
+    },
+    "transport-config": {
+      "protocol-binding": {
+        "protocol": "filesystem",
+        "baseDir": "/packages/bagit",
+        "createIfMissing": "true",
+        "overwrite": "false"
+      }
+    }
   }
 }

@@ -28,6 +28,7 @@ import org.dataconservancy.pass.deposit.assembler.shared.DepositFileResource;
 import org.dataconservancy.pass.deposit.assembler.shared.MetadataBuilderFactory;
 import org.dataconservancy.pass.deposit.assembler.shared.ResourceBuilderFactory;
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@Component
 public class BagItAssembler extends AbstractAssembler {
 
     private PassClient passClient;

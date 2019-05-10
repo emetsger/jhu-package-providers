@@ -21,11 +21,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.CR;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.CR_ENCODED;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.LF;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.LF_ENCODED;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.PERCENT;
+import static edu.jhu.library.pass.deposit.provider.bagit.BagItWriter.PERCENT_ENCODED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -153,6 +161,53 @@ public class BagItReader {
         return parseLines(lines);
     }
 
+    static String decodePath(String path) {
+        // Decode CR, LF, and percents that appear in a file path.
+
+        StringBuilder encodedPath = new StringBuilder(path);
+        StringBuilder decodedPath = new StringBuilder(path);
+
+        Map<String, String> DECODE_MAP = new HashMap<String, String>() {
+            {
+                put(LF_ENCODED, String.valueOf(LF));
+                put(CR_ENCODED, String.valueOf(CR));
+                put(PERCENT_ENCODED, String.valueOf(PERCENT));
+            }
+        };
+
+
+        Stream.of(LF_ENCODED, CR_ENCODED, PERCENT_ENCODED)
+                .forEach(encodedToken -> {
+
+                    // Offset into the encodedPath where we start searching for an encoded token
+                    int offset = 0;
+
+                    // Offset into the encodedPath where an encoded token was found
+                    int index = -1;
+
+                    // Offset into the decodedPath StringBuilder where a replacement should start
+                    int replacementOffset = 0;
+
+                    while ((index = encodedPath.indexOf(encodedToken, offset)) > -1) {
+                        // note the replacementOffset will be negative, so we add the index and the replacementOffset.
+                        decodedPath.replace((index + replacementOffset),
+                                (index + replacementOffset) + encodedToken.length(), DECODE_MAP.get(encodedToken));
+                        replacementOffset = replacementOffset -
+                                (encodedToken.length() - DECODE_MAP.get(encodedToken).length());
+                        offset = index + encodedToken.length();
+                    }
+
+                    // the encodedPath and the decodedPath need to have the same state prior to entering the
+                    // search/replace while loop
+                    encodedPath.setLength(decodedPath.length());
+                    for (int i = 0; i < decodedPath.length(); i++) {
+                        encodedPath.setCharAt(i, decodedPath.charAt(i));
+                    }
+                });
+
+        return decodedPath.toString();
+    }
+
     private LinkedHashMap<String, List<String>> parseLines(List<String> lines) {
         return lines.stream()
                 .filter(line -> line.contains(LABEL_SEP_SPACE) || line.contains(LABEL_SEP_TAB))
@@ -183,7 +238,7 @@ public class BagItReader {
                 .filter(line -> line.contains(SEP_SPACE) || line.contains(SEP_TAB))
                 .collect(Collectors.toMap(line -> {
                     String[] result = line.split("\\h");
-                    return result[result.length - 1];
+                    return decodePath(result[result.length - 1]);
                 }, line -> {
                     return line.split("\\h")[0];
                 }, (value1, value2) -> {

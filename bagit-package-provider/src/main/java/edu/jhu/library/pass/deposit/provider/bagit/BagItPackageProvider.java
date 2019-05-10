@@ -27,6 +27,8 @@ import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.dataconservancy.pass.model.Submission;
 import org.dataconservancy.pass.model.User;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 
 import java.io.ByteArrayInputStream;
@@ -46,6 +48,8 @@ import java.util.Map;
 import static java.net.URI.create;
 
 public class BagItPackageProvider implements PackageProvider {
+
+    protected static final Logger LOG = LoggerFactory.getLogger(BagItPackageProvider.class);
 
     protected static final UnsupportedOperationException UOE =
             new UnsupportedOperationException("Representation only exists in-memory.");
@@ -160,7 +164,9 @@ public class BagItPackageProvider implements PackageProvider {
     public String packagePath(DepositFileResource custodialResource) {
         // payload directory: https://www.rfc-editor.org/rfc/rfc8493.html#section-2.1.2
         try {
-            return String.format("%s/%s", PAYLOAD_DIR, BagItWriter.encodePath(custodialResource.getFilename()));
+            String encodedPath = BagItWriter.encodePath(custodialResource.getFilename());
+            LOG.error("Encoded '{}' as '{}'", custodialResource.getFilename(), encodedPath);
+            return String.format("%s/%s", PAYLOAD_DIR, encodedPath);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
