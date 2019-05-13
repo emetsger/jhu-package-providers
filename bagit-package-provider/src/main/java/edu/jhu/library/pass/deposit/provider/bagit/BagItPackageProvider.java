@@ -39,13 +39,16 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static java.net.URI.create;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.binary.Hex.encodeHexString;
 
 public class BagItPackageProvider implements PackageProvider {
 
@@ -99,7 +102,7 @@ public class BagItPackageProvider implements PackageProvider {
      * Tag file encoding
      * https://www.rfc-editor.org/rfc/rfc8493.html#section-2.1.1
      */
-    protected Charset tagFileEncoding = StandardCharsets.UTF_8;
+    protected Charset tagFileEncoding = UTF_8;
 
     /**
      * Supported BagIT version
@@ -180,7 +183,9 @@ public class BagItPackageProvider implements PackageProvider {
                 new ArrayList<>(writePayloadManifests(submission, packageResources, packageOpts));
         supplementalResources.add(writeBagDeclaration());
         supplementalResources.add(writeBagInfo(submission, packageResources,
-                this.getClass().getResourceAsStream((String)packageOpts.get(BAGINFO_TEMPLATE))));
+                this.getClass().getResourceAsStream((String) packageOpts.get(BAGINFO_TEMPLATE))));
+        supplementalResources.addAll(
+                writeTagfileManifests(submission, packageResources, packageOpts, supplementalResources));
 
         return supplementalResources;
     }
@@ -224,62 +229,52 @@ public class BagItPackageProvider implements PackageProvider {
 
             });
 
-            manifests.add(new SupplementalResource() {
-                @Override
-                public String getPackagePath() {
-                    return String.format(PAYLOAD_MANIFEST_TMPL, algo.getAlgo());
-                }
+            String payloadManifestName = String.format(PAYLOAD_MANIFEST_TMPL, algo.getAlgo());
+            manifests.add(new TagFile(payloadManifestName,
+                    payloadManifestName,
+                    out.toByteArray(),
+                    "Bag payload manifest for checksum algorithm " + algo.getAlgo()));
+        });
 
-                @Override
-                public boolean exists() {
-                    return true;
-                }
+        return manifests;
 
-                @Override
-                public URL getURL() throws IOException {
-                    throw UOE;
-                }
+    }
 
-                @Override
-                public URI getURI() throws IOException {
-                    throw UOE;
-                }
+    @SuppressWarnings("unchecked")
+    protected Collection<SupplementalResource> writeTagfileManifests(DepositSubmission submission,
+                                                                     List<PackageStream.Resource> packageResources,
+                                                                     Map<String, Object> packageOptions,
+                                                                     Collection<SupplementalResource> tagFiles) {
 
-                @Override
-                public File getFile() throws IOException {
-                    throw UOE;
-                }
+        // Generate a tag manifest for each checksum in the package options
+        Collection<PackageOptions.Checksum.OPTS> checksums = (Collection<PackageOptions.Checksum.OPTS>)
+                packageOptions.get(PackageOptions.Checksum.KEY);
 
-                @Override
-                public long contentLength() throws IOException {
-                    return out.size();
-                }
+        List<SupplementalResource> manifests = new ArrayList<>(checksums.size());
 
-                @Override
-                public long lastModified() throws IOException {
-                    return System.currentTimeMillis();
-                }
+        checksums.forEach(checksumAlgo -> {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BagAlgo algo = BagAlgo.valueOf(checksumAlgo.name());
 
-                @Override
-                public Resource createRelative(String s) throws IOException {
-                    throw UOE;
-                }
+            tagFiles.stream()
+                    .map(resource -> (TagFile) resource)
+                    .forEach(tagFile -> {
+                        MessageDigest md = resolveMessageDigest(checksumAlgo);
+                        String checksum = encodeHexString(md.digest(tagFile.in));
 
-                @Override
-                public String getFilename() {
-                    return getPackagePath();
-                }
+                        try {
+                            writer.writeManifestLine(out, checksum, tagFile.packagePath);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error writing manifest: " + e.getMessage(), e);
+                        }
 
-                @Override
-                public String getDescription() {
-                    return "Bag payload manifest for checksum algorithm " + algo.getAlgo();
-                }
+                    });
 
-                @Override
-                public InputStream getInputStream() throws IOException {
-                    return new ByteArrayInputStream(out.toByteArray());
-                }
-            });
+            String tagFileManifestName = String.format(TAG_MANIFEST_TMPL, algo.getAlgo());
+            manifests.add(new TagFile(tagFileManifestName,
+                    tagFileManifestName,
+                    out.toByteArray(),
+                    "Bag payload manifest for checksum algorithm " + algo.getAlgo()));
         });
 
         return manifests;
@@ -338,62 +333,8 @@ public class BagItPackageProvider implements PackageProvider {
 
         String bagInfo = parameterizer.parameterize(bagInfoMustacheTemplate, model);
 
-        return new SupplementalResource() {
-            @Override
-            public String getPackagePath() {
-                return BAGINFO_TXT;
-            }
+        return new TagFile(BAGINFO_TXT, BAGINFO_TXT, bagInfo.getBytes(tagFileEncoding), "Bag Metadata");
 
-            @Override
-            public boolean exists() {
-                return true;
-            }
-
-            @Override
-            public URL getURL() throws IOException {
-                throw UOE;
-            }
-
-            @Override
-            public URI getURI() throws IOException {
-                throw UOE;
-            }
-
-            @Override
-            public File getFile() throws IOException {
-                throw UOE;
-            }
-
-            @Override
-            public long contentLength() throws IOException {
-                return bagInfo.getBytes(tagFileEncoding).length;
-            }
-
-            @Override
-            public long lastModified() throws IOException {
-                return System.currentTimeMillis();
-            }
-
-            @Override
-            public Resource createRelative(String relativePath) throws IOException {
-                throw UOE;
-            }
-
-            @Override
-            public String getFilename() {
-                return BAGINFO_TXT;
-            }
-
-            @Override
-            public String getDescription() {
-                return "Bag Metadata";
-            }
-
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return new ByteArrayInputStream(bagInfo.getBytes(tagFileEncoding));
-            }
-        };
     }
 
     /**
@@ -413,62 +354,141 @@ public class BagItPackageProvider implements PackageProvider {
             throw new RuntimeException("Error writing Bag Declaration: " + e.getMessage(), e);
         }
 
-        return new SupplementalResource() {
-            @Override
-            public String getPackagePath() {
-                return BAGIT_TXT;
-            }
+        return new TagFile(BAGIT_TXT, BAGIT_TXT, bagDecl.toByteArray(), "Bag Declaration");
 
-            @Override
-            public boolean exists() {
-                return true;
-            }
+    }
 
-            @Override
-            public URL getURL() throws IOException {
-                throw UOE;
-            }
+    protected static MessageDigest resolveMessageDigest(PackageOptions.Checksum.OPTS checksumAlgo) {
 
-            @Override
-            public URI getURI() throws IOException {
-                throw UOE;
-            }
+        MessageDigest md;
 
-            @Override
-            public File getFile() throws IOException {
-                throw UOE;
-            }
+        try {
+            switch (checksumAlgo) {
+                case MD5:
+                    md = MessageDigest.getInstance("MD5");
+                    break;
+                case SHA256:
+                    md = MessageDigest.getInstance("SHA-256");
+                    break;
+                case SHA512:
+                    md = MessageDigest.getInstance("SHA-512");
+                    break;
+                default:
+                    throw new RuntimeException("No MessageDigest implementation found for " + checksumAlgo.name());
 
-            @Override
-            public long contentLength() throws IOException {
-                return bagDecl.size();
             }
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
 
-            @Override
-            public long lastModified() throws IOException {
-                return System.currentTimeMillis();
-            }
+        return md;
+    }
 
-            @Override
-            public Resource createRelative(String s) throws IOException {
-                throw new UnsupportedOperationException();
-            }
+    /**
+     * Encapsulates a BagIt tag file as a Deposit Services Package Provider Supplemental Resource
+     */
+    class TagFile implements SupplementalResource {
 
-            @Override
-            public String getFilename() {
-                return BAGIT_TXT;
-            }
+        private String filename;
+        private String packagePath;
+        private byte[] in;
+        private long contentLength;
+        private String description;
 
-            @Override
-            public String getDescription() {
-                return "Bag Declaration";
-            }
+        TagFile() {
 
-            @Override
-            public InputStream getInputStream() throws IOException {
-                return new ByteArrayInputStream(bagDecl.toByteArray());
-            }
-        };
+        }
+
+        TagFile(String filename, String packagePath, byte[] content, String desc) {
+            this.filename = filename;
+            this.packagePath = packagePath;
+            this.in = content;
+            this.contentLength = content.length;
+            this.description = desc;
+        }
+
+        long getContentLength() {
+            return contentLength;
+        }
+
+        void setContentLength(long contentLength) {
+            this.contentLength = contentLength;
+        }
+
+        void setFilename(String filename) {
+            this.filename = filename;
+        }
+
+        void setPackagePath(String packagePath) {
+            this.packagePath = packagePath;
+        }
+
+        byte[] getContent() {
+            return in;
+        }
+
+        void setContent(byte[] content) {
+            this.in = content;
+        }
+
+        void setDescription(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String getPackagePath() {
+            return packagePath;
+        }
+
+        @Override
+        public boolean exists() {
+            return false;
+        }
+
+        @Override
+        public long contentLength() throws IOException {
+            return contentLength;
+        }
+
+        @Override
+        public long lastModified() throws IOException {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        public String getFilename() {
+            return filename;
+        }
+
+        @Override
+        public String getDescription() {
+            return description;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return new ByteArrayInputStream(in);
+        }
+
+        @Override
+        public Resource createRelative(String relativePath) throws IOException {
+            throw UOE;
+        }
+
+        @Override
+        public URL getURL() throws IOException {
+            throw UOE;
+        }
+
+        @Override
+        public URI getURI() throws IOException {
+            throw UOE;
+        }
+
+        @Override
+        public File getFile() throws IOException {
+            throw UOE;
+        }
 
     }
 

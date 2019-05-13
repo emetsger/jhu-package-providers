@@ -18,9 +18,7 @@ package edu.jhu.library.pass.deposit.provider.bagit;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.MessageDigestCalculatingInputStream;
 import org.apache.commons.io.output.NullOutputStream;
-import org.dataconservancy.pass.deposit.assembler.PackageOptions;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions.Checksum;
-import org.dataconservancy.pass.deposit.assembler.shared.ChecksumImpl;
 import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
 import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.model.DepositFile;
@@ -42,6 +40,7 @@ import java.util.function.BiFunction;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -144,7 +143,10 @@ public class BagItPackageVerifier implements PackageVerifier {
         checksums.forEach(algorithm -> {
             File manifest = new File(explodedPackage.getExplodedDir(),
                     String.format(BagItPackageProvider.PAYLOAD_MANIFEST_TMPL, algorithm.name().toLowerCase()));
+            File tagManifest = new File(explodedPackage.getExplodedDir(),
+                    String.format(BagItPackageProvider.TAG_MANIFEST_TMPL, algorithm.name().toLowerCase()));
             verifyManifest(depositSubmission.getFiles(), explodedPackage.getExplodedDir(), manifest, algorithm);
+            verifyTagManifest(explodedPackage.getExplodedDir(), tagManifest, algorithm);
         });
 
         // Bag Decl
@@ -198,6 +200,56 @@ public class BagItPackageVerifier implements PackageVerifier {
 
         assertEquals(expectedVersion, entries.get(BagMetadata.BAGIT_VERSION));
         assertEquals(expectedEncoding.name(), entries.get(BagMetadata.TAG_FILE_ENCODING));
+    }
+
+    /**
+     * Verifies:
+     * <ul>
+     *     <li>The tag manifest exists</li>
+     *     <li>That the tag manifest does not exist under the payload directory</li>
+     *     <li>That each tag file enumerated in the manifest is present in the package</li>
+     *     <li>That the checksum for the tag file matches what is in the manifest</li>
+     * </ul>
+     * @param packageDir the base directory of the exploded package
+     * @param tagManifestFile the tag manifest
+     * @param algo the checksum algorithm used to generate the manifest
+     * @see <a href="https://tools.ietf.org/html/rfc8493#section-2.2.1">RFC 8439 §2.2.1</a>
+     */
+    protected void verifyTagManifest(File packageDir, File tagManifestFile, Checksum.OPTS algo) {
+        assertTrue("Missing expected tag manifest '" + tagManifestFile + "'", tagManifestFile.exists());
+
+        assertEquals(String.format(BagItPackageProvider.TAG_MANIFEST_TMPL, algo.name().toLowerCase()),
+                tagManifestFile.getName());
+
+        // Read it in.
+        Map<String, String> manifest;
+        try {
+            manifest = reader.readManifest(new FileInputStream(tagManifestFile));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Error reading tag manifest " + tagManifestFile + ": " + e.getMessage(), e);
+        }
+
+        // make sure each tag in the manifest is present
+        // insure each file *is not* in the payload directory
+        manifest.keySet().forEach(expectedTagFile -> {
+            assertTrue(new File(packageDir, expectedTagFile).exists());
+            assertFalse(expectedTagFile.startsWith(BagItPackageProvider.PAYLOAD_DIR));
+        });
+
+        // verify checksum of each tag file in the manifest
+        manifest.forEach((key, value) -> {
+            File payloadFile = new File(packageDir, key);
+            try (NullOutputStream nullOut = new NullOutputStream();
+                 FileInputStream fileIn = new FileInputStream(payloadFile);
+                 MessageDigestCalculatingInputStream xsumCalculator = checksumCalculatorFor(fileIn, algo)) {
+                IOUtils.copy(xsumCalculator, nullOut);
+                assertEquals(value, encodeHexString(xsumCalculator.getMessageDigest().digest()));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Missing expected tag manifest file: " + e.getMessage(), e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     /**
