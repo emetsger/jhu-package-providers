@@ -118,6 +118,13 @@
             <groupId>org.dataconservancy.pass</groupId>
             <artifactId>pass-data-client</artifactId>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- org.elasticsearch.client:elasticsearch-rest-high-level-client -->
+                    <groupId>org.elasticsearch.client</groupId>
+                    <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
