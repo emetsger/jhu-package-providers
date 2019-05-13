@@ -193,15 +193,15 @@ public class BagItPackageProvider implements PackageProvider {
     /**
      * Writes a payload manifest for each checksum supplied in the packager options.
      *
-     * @param submission the submission in the Deposit Services model
+     * @param submission       the submission in the Deposit Services model
      * @param packageResources the custodial files being streamed in the package
-     * @param packageOptions the options supplied to the Assembler when creating the package
+     * @param packageOptions   the options supplied to the Assembler when creating the package
      * @return the BagIt payload manifests
      */
     @SuppressWarnings("unchecked")
     protected Collection<SupplementalResource> writePayloadManifests(DepositSubmission submission,
-                                                    List<PackageStream.Resource> packageResources,
-                                                    Map<String, Object> packageOptions) {
+                                                                     List<PackageStream.Resource> packageResources,
+                                                                     Map<String, Object> packageOptions) {
 
         // Generate a payload manifest for each checksum in the package options
         Collection<PackageOptions.Checksum.OPTS> checksums = (Collection<PackageOptions.Checksum.OPTS>)
