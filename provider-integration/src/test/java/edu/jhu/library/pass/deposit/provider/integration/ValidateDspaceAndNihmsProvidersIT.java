@@ -15,6 +15,10 @@
  */
 package edu.jhu.library.pass.deposit.provider.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhu.library.pass.deposit.provider.bagit.BagItPackageProvider;
+import edu.jhu.library.pass.deposit.provider.bagit.BagItPackageVerifier;
 import edu.jhu.library.pass.deposit.provider.j10p.DspaceMetsPackageVerifier;
 import org.dataconservancy.pass.deposit.assembler.PackageOptions;
 import org.dataconservancy.pass.deposit.assembler.shared.ExplodedPackage;
@@ -22,6 +26,7 @@ import org.dataconservancy.pass.deposit.assembler.shared.PackageVerifier;
 import org.dataconservancy.pass.deposit.integration.shared.SubmitAndValidatePackagesIT;
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.dataconservancy.pass.deposit.provider.nihms.NihmsPackageVerifier;
+import org.dataconservancy.pass.model.Repository;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -30,6 +35,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.fail;
 
@@ -73,6 +81,8 @@ public class ValidateDspaceAndNihmsProvidersIT extends SubmitAndValidatePackages
 
     private NihmsPackageVerifier nihmsVerifier;
 
+    private BagItPackageVerifier bagitVerifier;
+
     /**
      * Initializes the package verifiers.
      *
@@ -82,6 +92,27 @@ public class ValidateDspaceAndNihmsProvidersIT extends SubmitAndValidatePackages
     public void setUp() throws Exception {
         dspaceVerifier = new DspaceMetsPackageVerifier(PackageOptions.Checksum.OPTS.SHA512);
         nihmsVerifier = new NihmsPackageVerifier();
+        bagitVerifier = new BagItPackageVerifier();
+
+        Set<String> existingRepos = passClient
+                .findAllByAttribute(Repository.class, "repositoryKey", "*")
+                .stream()
+                .map(uri -> passClient.readResource(uri, Repository.class))
+                .map(Repository::getRepositoryKey)
+                .collect(Collectors.toSet());
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(this.getClass().getResourceAsStream("/repositories.json"));
+        node.fieldNames().forEachRemaining(repoKey -> {
+            if (!existingRepos.contains(repoKey)) {
+                System.out.println("Dynamically creating Repository with key '" + repoKey + "'");
+                Repository repo = new Repository();
+                repo.setRepositoryKey(repoKey);
+                repo.setDescription("Dynamically created by " + this.getClass().getName());
+                repo.setName("Dynamic " + repoKey);
+                existingRepos.add(repoKey);
+            }
+        });
     }
 
     /**
@@ -102,6 +133,10 @@ public class ValidateDspaceAndNihmsProvidersIT extends SubmitAndValidatePackages
 
         if (explodedPackage.getPackageFile().toString().contains("jscholarship")) {
             return dspaceVerifier;
+        }
+
+        if (explodedPackage.getPackageFile().toString().contains("bagit")) {
+            return bagitVerifier;
         }
 
         fail("Unable to select PackageVerifier");
