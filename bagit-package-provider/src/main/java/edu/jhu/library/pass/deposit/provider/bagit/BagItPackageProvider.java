@@ -167,8 +167,8 @@ public class BagItPackageProvider implements PackageProvider {
     public String packagePath(DepositFileResource custodialResource) {
         // payload directory: https://www.rfc-editor.org/rfc/rfc8493.html#section-2.1.2
         try {
-            String encodedPath = BagItWriter.encodePath(custodialResource.getFilename());
-            LOG.error("Encoded '{}' as '{}'", custodialResource.getFilename(), encodedPath);
+            String encodedPath = BagItWriter.encodePath(custodialResource.getDepositFile().getName());
+            LOG.debug("Encoded '{}' as '{}'", custodialResource.getDepositFile().getName(), encodedPath);
             return String.format("%s/%s", PAYLOAD_DIR, encodedPath);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);

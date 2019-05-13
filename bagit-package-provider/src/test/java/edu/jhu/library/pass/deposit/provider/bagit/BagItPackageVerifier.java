@@ -103,7 +103,7 @@ public class BagItPackageVerifier implements PackageVerifier {
         final BiFunction<File, File, DepositFile> MAPPER = (packageDir, payloadFile) -> {
             return depositSubmission.getFiles()
                     .stream()
-                    .filter(df -> BagItWriter.encodePath(df.getLocation()).endsWith(payloadFile.getName()))
+                    .filter(df -> BagItWriter.encodePath(df.getName()).endsWith(payloadFile.getName()))
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Missing custodial file '" + payloadFile + "'"));
         };
@@ -287,12 +287,17 @@ public class BagItPackageVerifier implements PackageVerifier {
 
         // make sure each payload file is represented in the manifest
         payload.forEach(df -> {
-            String encodedLocation = BagItWriter.encodePath(df.getLocation());
-            String relative = BagItPackageProvider.PAYLOAD_DIR +
-                    encodedLocation.substring(encodedLocation.lastIndexOf("/"));
+            String encodedLocation = BagItWriter.encodePath(df.getName());
+            String relative = null;
+            if (encodedLocation.contains("/")) {
+                relative = BagItPackageProvider.PAYLOAD_DIR +
+                        encodedLocation.substring(encodedLocation.lastIndexOf("/"));
+            } else {
+                relative = BagItPackageProvider.PAYLOAD_DIR + "/" + encodedLocation;
+            }
             File expectedPayloadFile = new File(packageDir, relative);
-            assertTrue(expectedPayloadFile.exists());
-            assertTrue("Missing file '" + relative + "' from the manifest (package directory: " + packageDir + "')", manifest.containsKey(relative));
+            assertTrue("Missing expected payload file '" + expectedPayloadFile + "'", expectedPayloadFile.exists());
+            assertTrue("Missing payload file '" + relative + "' from the manifest (package directory: " + packageDir + "')", manifest.containsKey(relative));
         });
 
         // make sure each file in the manifest is present in the payload
