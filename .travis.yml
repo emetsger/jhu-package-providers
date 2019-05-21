@@ -28,5 +28,5 @@ jdk:
   - oraclejdk8
 
 after_failure:
-  - docker logs `docker ps|grep provider-integration-its|awk '{print $1}'`
+  - docker logs `docker ps|grep deposit-services-providers-its-1|awk '{print $1}'`
   - docker logs `docker ps |grep index|awk '{print $1}'`
