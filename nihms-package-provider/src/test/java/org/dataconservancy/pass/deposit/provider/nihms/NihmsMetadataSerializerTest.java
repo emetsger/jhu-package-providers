@@ -16,29 +16,48 @@
 
 package org.dataconservancy.pass.deposit.provider.nihms;
 
+import org.apache.commons.io.IOUtils;
 import org.dataconservancy.pass.deposit.assembler.shared.SizedStream;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
 import org.dataconservancy.pass.deposit.model.JournalPublicationType;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 import org.xmlunit.validation.Languages;
 import org.xmlunit.validation.ValidationResult;
 import org.xmlunit.validation.Validator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Spliterators;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Spliterator.IMMUTABLE;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.SIZED;
+import static java.util.stream.StreamSupport.stream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -180,6 +199,105 @@ public class NihmsMetadataSerializerTest {
         doi = node.getAttributes().getNamedItem("doi").getTextContent();
         is.close();
         assertTrue("http:// prefix and/or domain not stripped from DOI during export.", doi.contentEquals(path));
+    }
+
+    /**
+     * A complete IssnPubType (having a non null publication type and issn value) should be serialized to the metadata.
+     */
+    @Test
+    public void completeIssnPubtype() throws IOException, ParserConfigurationException, SAXException {
+        DepositMetadata metadata = new DepositMetadata();
+        DepositMetadata.Journal journalMd = new DepositMetadata.Journal();
+        String expectedIssn = "foo";
+        String expectedPubType = JournalPublicationType.EPUB.name().toLowerCase(); // remember OPUB is mapped to EPUB when serializing
+
+        DepositMetadata.IssnPubType issn = new DepositMetadata.IssnPubType(expectedIssn, JournalPublicationType.OPUB);
+        journalMd.setIssnPubTypes(new HashMap<String, DepositMetadata.IssnPubType>() {
+            {
+                put(issn.issn, issn);
+            }
+        });
+
+        metadata.setJournalMetadata(journalMd);
+
+        underTest = new NihmsMetadataSerializer(metadata);
+
+        DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Node doc = builder.parse(underTest.serialize().getInputStream());
+        NodeList issnNodes = ((Document) doc).getElementsByTagName("issn");
+
+        assertEquals(1, issnNodes.getLength());
+
+        Node actualIssn = asStream(issnNodes)
+                .filter(node -> expectedIssn.equals(node.getFirstChild().getNodeValue()))
+                .findAny()
+                .orElseThrow(() ->
+                        new RuntimeException("Missing expected <issn> element for " + expectedIssn + " and " + expectedPubType));
+
+        assertEquals(expectedPubType, actualIssn.getAttributes().getNamedItem("pub-type").getNodeValue());
+    }
+
+    /**
+     * IssnPubType instances that are incomplete (one of the fields is null or empty) should not be serialized
+     * https://github.com/OA-PASS/jhu-package-providers/issues/16
+     */
+    @Test
+    public void incompleteIssnPubtypeNullIssn() throws IOException {
+        DepositMetadata metadata = new DepositMetadata();
+        DepositMetadata.Journal journalMd = new DepositMetadata.Journal();
+        DepositMetadata.IssnPubType nullIssn = new DepositMetadata.IssnPubType(null, JournalPublicationType.OPUB);
+        journalMd.setIssnPubTypes(new HashMap<String, DepositMetadata.IssnPubType>() {
+            {
+                put(nullIssn.issn, nullIssn);
+            }
+        });
+
+        metadata.setJournalMetadata(journalMd);
+
+        underTest = new NihmsMetadataSerializer(metadata);
+
+        assertFalse(IOUtils.toString(underTest.serialize().getInputStream(), UTF_8).contains("issn"));
+    }
+
+    /**
+     * IssnPubType instances that are incomplete (one of the fields is null or empty) should not be serialized
+     * https://github.com/OA-PASS/jhu-package-providers/issues/16
+     */
+    @Test
+    public void incompleteIssnPubtypeNullPubType() throws IOException {
+        DepositMetadata metadata = new DepositMetadata();
+        DepositMetadata.Journal journalMd = new DepositMetadata.Journal();
+        DepositMetadata.IssnPubType nullPubType = new DepositMetadata.IssnPubType("foo", null);
+        journalMd.setIssnPubTypes(new HashMap<String, DepositMetadata.IssnPubType>() {
+            {
+                put(nullPubType.issn, nullPubType);
+            }
+        });
+
+        metadata.setJournalMetadata(journalMd);
+
+        underTest = new NihmsMetadataSerializer(metadata);
+
+        assertFalse(IOUtils.toString(underTest.serialize().getInputStream(), UTF_8).contains("issn"));
+    }
+
+    private static Stream<Node> asStream(NodeList nodeList) {
+        int characteristics = SIZED | ORDERED;
+        Stream<Node> nodeStream = stream(new AbstractSpliterator<Node>(nodeList.getLength(), characteristics) {
+            int index = 0;
+            @Override
+            public boolean tryAdvance(Consumer<? super Node> action) {
+                if (nodeList.getLength() == index) {
+                    return false;
+                }
+
+                action.accept(nodeList.item(index++));
+
+                return true;
+            }
+        }, false);
+
+        return nodeStream;
     }
 
 }
