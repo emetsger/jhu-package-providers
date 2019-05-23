@@ -27,6 +27,8 @@ import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
 import org.dataconservancy.pass.deposit.assembler.shared.SizedStream;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
 import org.dataconservancy.pass.deposit.model.JournalPublicationType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -37,6 +39,8 @@ import java.util.List;
  * @author Jim Martino (jrm@jhu.edu)
  */
 public class NihmsMetadataSerializer implements StreamingSerializer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NihmsMetadataSerializer.class);
 
     private DepositMetadata metadata;
 
@@ -109,6 +113,14 @@ public class NihmsMetadataSerializer implements StreamingSerializer {
                 }
 
                 journal.getIssnPubTypes().values().forEach(issnPubType -> {
+                    // if the IssnPubType is incomplete (either the pubType or issn is null or empty), we should
+                    // omit it from the metadata, per NIH's requirements
+                    // See https://github.com/OA-PASS/metadata-schemas/pull/28 and
+                    // https://github.com/OA-PASS/jhu-package-providers/issues/16
+                    if (issnPubType.pubType == null || issnPubType.issn == null || issnPubType.issn.trim().isEmpty()) {
+                        LOG.debug("Discarding incomplete ISSN: {}", issnPubType);
+                        return;
+                    }
                     writer.startNode("issn");
                     // The JournalPublicationType OPUB should be translated to JournalPublicationType EPUB to stay
                     // valid with respect to the NIHMS metadata schema
