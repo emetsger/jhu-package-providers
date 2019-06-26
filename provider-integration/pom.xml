@@ -155,6 +155,7 @@
                                     <name>oapass/deposit-services-providers:${project.parent.version}</name>
                                     <build>
                                         <dockerFile>Dockerfile</dockerFile>
+                                        <noCache>true</noCache>
                                     </build>
                                     <run>
                                         <skip>true</skip>
@@ -171,6 +172,7 @@
                                         <!-- Adds our runtime configuration which uses the Filesystem Tranpsort, and
                                              creates a directory for written packages -->
                                         <dockerFile>Dockerfile-ITs</dockerFile>
+                                        <noCache>true</noCache>
                                     </build>
                                     <run>
                                         <network>

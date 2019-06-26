@@ -43,6 +43,17 @@
                         <goals>
                             <goal>build</goal>
                         </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>providers/nihms-package-provider</name>
+                                    <build>
+                                        <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                                        <noCache>true</noCache>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
