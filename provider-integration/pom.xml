@@ -462,14 +462,12 @@
         <dependency>
             <groupId>org.dataconservancy.pass</groupId>
             <artifactId>pass-client-api</artifactId>
-            <version>0.5.3-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.dataconservancy.pass</groupId>
             <artifactId>pass-data-client</artifactId>
-            <version>0.5.3-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
 
