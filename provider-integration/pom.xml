@@ -83,7 +83,7 @@
                         <goals>
                             <goal>add-test-resource</goal>
                         </goals>
-                        <phase>process-test-resources</phase>
+                        <phase>generate-test-resources</phase>
                         <configuration>
                             <resources>
                                 <resource>
@@ -197,7 +197,7 @@
                                             <PASS_FEDORA_USER>${pass.fedora.user}</PASS_FEDORA_USER>
                                             <PASS_FEDORA_PASSWORD>${pass.fedora.password}</PASS_FEDORA_PASSWORD>
                                             <PASS_FEDORA_BASEURL>${pass.fedora.baseurl}</PASS_FEDORA_BASEURL>
-                                            <PASS_DEPOSIT_WORKERS_CONCURRENCY>8</PASS_DEPOSIT_WORKERS_CONCURRENCY>
+                                            <PASS_DEPOSIT_WORKERS_CONCURRENCY>10</PASS_DEPOSIT_WORKERS_CONCURRENCY>
                                         </env>
                                     </run>
                                 </image>
@@ -377,6 +377,14 @@
         </dependency>
 
         <dependency>
+            <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
+            <artifactId>shared-dspace-provider</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>shared-resources</artifactId>
             <version>${deposit-services.version}</version>
@@ -409,6 +417,22 @@
         <dependency>
             <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
             <artifactId>nihms-package-provider</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
+            <artifactId>dash-package-provider</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit.package.providers</groupId>
+            <artifactId>dash-package-provider</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
