@@ -1,5 +1,7 @@
 package edu.jhu.library.pass.deposit.provider.dash;
 
+import au.edu.apsr.mtk.base.DmdSec;
+import au.edu.apsr.mtk.base.METSException;
 import org.apache.commons.io.IOUtils;
 import org.dataconservancy.pass.client.PassClient;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
@@ -22,13 +24,12 @@ import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -224,6 +225,21 @@ public class DashMetadataDomWriterTest {
             writeDim(dimDoc, out);
             LOG.debug("Generated DIM Doc\n{}", IOUtils.toString(out.toByteArray(), "UTF-8"));
         }
+    }
+
+    /**
+     * Insure the &lt;dmdSec&gt; using the correct metadata type
+     */
+    @Test
+    public void verifyMdType() throws METSException {
+        Collection<DmdSec> dmdSecs = underTest.mapDmdSec(submission);
+
+        assertEquals(1, dmdSecs.size());
+
+        DmdSec dmdSec = dmdSecs.iterator().next();
+
+        assertEquals("OTHER", dmdSec.getMdWrap().getMDType());
+        assertEquals("DIM", dmdSec.getMdWrap().getOtherMDType());
     }
 
     /**

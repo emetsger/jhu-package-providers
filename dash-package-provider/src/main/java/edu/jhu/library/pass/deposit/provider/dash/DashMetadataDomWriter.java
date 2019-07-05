@@ -42,7 +42,7 @@ import static edu.jhu.library.pass.deposit.provider.shared.dspace.DomWriterUtil.
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.DomWriterUtil.mintId;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.DomWriterUtil.newDocument;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.DomWriterUtil.newRootElement;
-import static edu.jhu.library.pass.deposit.provider.shared.dspace.MetsMdType.DC;
+import static edu.jhu.library.pass.deposit.provider.shared.dspace.MetsMdType.OTHER;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DCT_PROV;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_ABSTRACT;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_CONTRIBUTOR;
@@ -99,7 +99,8 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
         try {
             MdWrap dcMdWrap = dcDmdSec.newMdWrap();
             dcMdWrap.setID(mintId());
-            dcMdWrap.setMDType(DC.getType());
+            dcMdWrap.setMDType(OTHER.getType());
+            dcMdWrap.setOtherMDType("DIM");
             dcMdWrap.setXmlData(dcRecord);
             dcDmdSec.setMdWrap(dcMdWrap);
             dcDmdSec.setGroupID(mintId());
