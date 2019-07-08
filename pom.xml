@@ -51,6 +51,7 @@
         <module>dash-package-provider</module>
         <module>shared-dspace-provider</module>
         <module>shared-provider</module>
+        <module>swordv2-integration</module>
     </modules>
 
     <profiles>
