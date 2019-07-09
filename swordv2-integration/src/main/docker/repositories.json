@@ -26,19 +26,19 @@
       "auth-realms": [
         {
           "mech": "basic",
-          "username": "${dspace.username}",
-          "password": "${dspace.password}",
+          "username": "${dspace.admin.username}",
+          "password": "${dspace.admin.password}",
           "url": "${dspace.baseuri}/swordv2"
         }
       ],
       "protocol-binding": {
         "protocol": "SWORDv2",
-        "username": "${dspace.username}",
-        "password": "${dspace.password}",
+        "username": "${dspace.admin.username}",
+        "password": "${dspace.admin.password}",
         "server-fqdn": "${dspace.host}",
         "server-port": "${dspace.port}",
         "service-doc": "${dspace.baseuri}/swordv2/servicedocument",
-        "default-collection": "${dspace.baseuri}/swordv2/collection/${dspace.collection.handle}",
+        "default-collection": "${dspace.baseuri}/swordv2/collection/${dspace.collection.no-workflow.handle}",
         "on-behalf-of": null,
         "deposit-receipt": true,
         "user-agent": "pass-deposit/${deposit.services.version}"
@@ -72,19 +72,19 @@
       "auth-realms": [
         {
           "mech": "basic",
-          "username": "${dspace.username}",
-          "password": "${dspace.password}",
+          "username": "${dspace.submitter.username}",
+          "password": "${dspace.submitter.password}",
           "url": "${dspace.baseuri}/swordv2"
         }
       ],
       "protocol-binding": {
         "protocol": "SWORDv2",
-        "username": "${dspace.username}",
-        "password": "${dspace.password}",
+        "username": "${dspace.submitter.username}",
+        "password": "${dspace.submitter.password}",
         "server-fqdn": "${dspace.host}",
         "server-port": "${dspace.port}",
         "service-doc": "${dspace.baseuri}/swordv2/servicedocument",
-        "default-collection": "${dspace.baseuri}/swordv2/collection/${dspace.collection.handle}",
+        "default-collection": "${dspace.baseuri}/swordv2/collection/${dspace.collection.workflow.handle}",
         "on-behalf-of": null,
         "deposit-receipt": true,
         "user-agent": "pass-deposit/${deposit.services.version}"
