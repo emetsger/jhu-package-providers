@@ -126,57 +126,6 @@
                             <startParallel>true</startParallel>
                             <imagePullPolicy>IfNotPresent</imagePullPolicy>
                             <images>
-                                <!--<image>-->
-                                    <!--&lt;!&ndash; Production image: built, but not run &ndash;&gt;-->
-                                    <!--<name>oapass/deposit-services-providers:${project.parent.version}</name>-->
-                                    <!--<build>-->
-                                        <!--<dockerFile>Dockerfile</dockerFile>-->
-                                    <!--</build>-->
-                                    <!--<run>-->
-                                        <!--<skip>true</skip>-->
-                                    <!--</run>-->
-                                <!--</image>-->
-                                <!--<image>-->
-                                    <!--&lt;!&ndash; IT image derived from production image above: used to build, and provides the-->
-                                         <!--Deposit Services runtime for ITs &ndash;&gt;-->
-                                    <!--&lt;!&ndash; This container is not exposed to the IT runtime; ITs only communicate with-->
-                                         <!--Fedora; they submit content to Fedora and inspect the generated packages-->
-                                         <!--created by this image &ndash;&gt;-->
-                                    <!--<name>oapass/deposit-services-providers-its:${project.parent.version}</name>-->
-                                    <!--<build>-->
-                                        <!--&lt;!&ndash; Adds our runtime configuration which uses the Filesystem Tranpsort, and-->
-                                             <!--creates a directory for written packages &ndash;&gt;-->
-                                        <!--<dockerFile>Dockerfile-ITs</dockerFile>-->
-                                    <!--</build>-->
-                                    <!--<run>-->
-                                        <!--<network>-->
-                                            <!--<name>its</name>-->
-                                        <!--</network>-->
-                                        <!--<volumes>-->
-                                            <!--<bind>-->
-                                                <!--&lt;!&ndash; packages written by deposit services will be visible under-->
-                                                     <!--'target/packages' &ndash;&gt;-->
-                                                <!--<volume>${project.build.directory}/packages:/packages</volume>-->
-
-                                                <!--&lt;!&ndash; overwrite /etc/hosts with an empty file, so that the alias-->
-                                                     <!--'localhost' resolves to the fcrepo container &ndash;&gt;-->
-                                                <!--<volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>-->
-                                            <!--</bind>-->
-                                        <!--</volumes>-->
-                                        <!--<env>-->
-                                            <!--<FCREPO_PORT>${fcrepo.http.port}</FCREPO_PORT>-->
-                                            <!--<FCREPO_JMS_PORT>${fcrepo.jms.port}</FCREPO_JMS_PORT>-->
-                                            <!--<FCREPO_STOMP_PORT>${fcrepo.stomp.port}</FCREPO_STOMP_PORT>-->
-                                            <!--<FCREPO_JMS_BASEURL>${fcrepo.jms.baseurl}</FCREPO_JMS_BASEURL>-->
-                                            <!--<PASS_DEPOSIT_REPOSITORY_CONFIGURATION>file:/repositories.json</PASS_DEPOSIT_REPOSITORY_CONFIGURATION>-->
-                                            <!--<PASS_FEDORA_USER>${pass.fedora.user}</PASS_FEDORA_USER>-->
-                                            <!--<PASS_FEDORA_PASSWORD>${pass.fedora.password}</PASS_FEDORA_PASSWORD>-->
-                                            <!--<PASS_FEDORA_BASEURL>${pass.fedora.baseurl}</PASS_FEDORA_BASEURL>-->
-                                            <!--<PASS_DEPOSIT_WORKERS_CONCURRENCY>8</PASS_DEPOSIT_WORKERS_CONCURRENCY>-->
-                                        <!--</env>-->
-                                    <!--</run>-->
-                                <!--</image>-->
-
                                 <!-- Fedora, Elastic Search, and the Indexer -->
 
                                 <image>
@@ -213,62 +162,6 @@
                                         </network>
                                     </run>
                                 </image>
-                                <!--<image>-->
-                                    <!--<alias>elasticsearch</alias>-->
-                                    <!--<name>${docker.elasticsearch.version}</name>-->
-                                    <!--<run>-->
-                                        <!--<skip>${indexer.skip}</skip>-->
-                                        <!--<wait>-->
-                                            <!--<http>-->
-                                                <!--<url>http://${pass.elasticsearch.host}:${es.port}/</url>-->
-                                            <!--</http>-->
-                                            <!--<time>120000</time>-->
-                                        <!--</wait>-->
-                                        <!--<ports>-->
-                                            <!--<port>${es.port}:9200</port>-->
-                                        <!--</ports>-->
-                                        <!--<env>-->
-                                            <!--<discovery.type>single-node</discovery.type>-->
-                                            <!--<bootstrap.memory_lock>true</bootstrap.memory_lock>-->
-                                            <!--<ES_JAVA_OPTS>-Xms512m -Xmx512m</ES_JAVA_OPTS>-->
-                                        <!--</env>-->
-                                        <!--<network>-->
-                                            <!--<name>its</name>-->
-                                            <!--<alias>elasticsearch</alias>-->
-                                        <!--</network>-->
-                                    <!--</run>-->
-                                <!--</image>-->
-                                <!--<image>-->
-                                    <!--<alias>indexer</alias>-->
-                                    <!--<name>${docker.indexer.version}</name>-->
-                                    <!--<run>-->
-                                        <!--<skip>${indexer.skip}</skip>-->
-                                        <!--<env>-->
-                                            <!--<PI_FEDORA_USER>${pass.fedora.user}</PI_FEDORA_USER>-->
-                                            <!--<PI_FEDORA_PASS>${pass.fedora.password}</PI_FEDORA_PASS>-->
-                                            <!--<PI_FEDORA_INTERNAL_BASE>http://fcrepo:${fcrepo.http.port}/fcrepo/rest/</PI_FEDORA_INTERNAL_BASE>-->
-                                            <!--<PI_ES_BASE>http://elasticsearch:9200/</PI_ES_BASE>-->
-                                            <!--<PI_ES_INDEX>http://elasticsearch:9200/pass/</PI_ES_INDEX>-->
-                                            <!--<PI_FEDORA_JMS_BROKER>tcp://fcrepo:${fcrepo.jms.port}</PI_FEDORA_JMS_BROKER>-->
-                                            <!--<PI_FEDORA_JMS_QUEUE>fedora</PI_FEDORA_JMS_QUEUE>-->
-                                            <!--<PI_TYPE_PREFIX>http://oapass.org/ns/pass#</PI_TYPE_PREFIX>-->
-                                            <!--<PI_LOG_LEVEL>DEBUG</PI_LOG_LEVEL>-->
-                                            <!--<PI_ES_CONFIG>/app/esconfig-3.4.json</PI_ES_CONFIG>-->
-                                        <!--</env>-->
-                                        <!--<network>-->
-                                            <!--<name>its</name>-->
-                                            <!--<alias>indexer</alias>-->
-                                        <!--</network>-->
-                                        <!--<volumes>-->
-                                            <!--<bind>-->
-                                                <!--<volume>${project.build.testOutputDirectory}/esconfig:/app/esconfig</volume>-->
-                                                <!--&lt;!&ndash; overwrite /etc/hosts with an empty file, so that the alias-->
-                                                     <!--'localhost' resolves to the fcrepo container &ndash;&gt;-->
-                                                <!--<volume>${project.build.testOutputDirectory}/hosts:/etc/hosts</volume>-->
-                                            <!--</bind>-->
-                                        <!--</volumes>-->
-                                    <!--</run>-->
-                                <!--</image>-->
                             </images>
                         </configuration>
                     </execution>
