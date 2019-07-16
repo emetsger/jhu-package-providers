@@ -41,6 +41,7 @@
         <pass.elasticsearch.host>${docker.host.address}</pass.elasticsearch.host>
         <pass.elasticsearch.url>http://${pass.elasticsearch.host}:${es.port}/pass/</pass.elasticsearch.url>
         <pass.elasticsearch.limit>100</pass.elasticsearch.limit>
+        <pass.deposit.repository.configuration>repositories.json</pass.deposit.repository.configuration>
         <dspace.server>${docker.host.address}</dspace.server>
         <dspace.baseuri>http://${dspace.server}:${dspace.port}</dspace.baseuri>
         <dspace.admin.username>dspace-admin@oapass.org</dspace.admin.username>
@@ -188,11 +189,21 @@
                                             <FCREPO_JMS_PORT>${fcrepo.jms.port}</FCREPO_JMS_PORT>
                                             <FCREPO_STOMP_PORT>${fcrepo.stomp.port}</FCREPO_STOMP_PORT>
                                             <FCREPO_JMS_BASEURL>${fcrepo.jms.baseurl}</FCREPO_JMS_BASEURL>
-                                            <PASS_DEPOSIT_REPOSITORY_CONFIGURATION>file:/repositories.json</PASS_DEPOSIT_REPOSITORY_CONFIGURATION>
+                                            <PASS_DEPOSIT_REPOSITORY_CONFIGURATION>file:/${pass.deposit.repository.configuration}</PASS_DEPOSIT_REPOSITORY_CONFIGURATION>
                                             <PASS_FEDORA_USER>${pass.fedora.user}</PASS_FEDORA_USER>
                                             <PASS_FEDORA_PASSWORD>${pass.fedora.password}</PASS_FEDORA_PASSWORD>
                                             <PASS_FEDORA_BASEURL>${pass.fedora.baseurl}</PASS_FEDORA_BASEURL>
                                             <PASS_DEPOSIT_WORKERS_CONCURRENCY>20</PASS_DEPOSIT_WORKERS_CONCURRENCY>
+                                            <DSPACE_ADMIN_USERNAME>dspace-admin@oapass.org</DSPACE_ADMIN_USERNAME>
+                                            <DSPACE_ADMIN_PASSWORD>foobar</DSPACE_ADMIN_PASSWORD>
+                                            <DSPACE_SUBMITTER_USERNAME>submitter@oapass.org</DSPACE_SUBMITTER_USERNAME>
+                                            <DSPACE_SUBMITTER_PASSWORD>moo</DSPACE_SUBMITTER_PASSWORD>
+                                            <DSPACE_COLLECTION_WORKFLOW_HANDLE>123456789/4</DSPACE_COLLECTION_WORKFLOW_HANDLE>
+                                            <DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>123456789/3</DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>
+                                            <DSPACE_HOST>${dspace.server}</DSPACE_HOST>
+                                            <DSPACE_PORT>${dspace.port}</DSPACE_PORT>
+                                            <DSPACE_BASEURI>${dspace.baseuri}</DSPACE_BASEURI>
+                                            <DEPOSIT_SERVICES_VERSION>${project.parent.version}</DEPOSIT_SERVICES_VERSION>
                                         </env>
                                     </run>
                                 </image>
@@ -369,6 +380,7 @@
                         <fcrepo.port>${fcrepo.http.port}</fcrepo.port>
                         <fcrepo.jms.port>${fcrepo.jms.port}</fcrepo.jms.port>
                         <pass.jsonld.context>${pass.jsonld.context}</pass.jsonld.context>
+                        <pass.deposit.repository.configuration>/${pass.deposit.repository.configuration}</pass.deposit.repository.configuration>
                     </systemProperties>
                 </configuration>
                 <executions>
@@ -403,6 +415,13 @@
             <scope>test</scope>
             <type>test-jar</type>
             <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dataconservancy.pass.deposit</groupId>
+            <artifactId>shared-integration</artifactId>
+            <version>${deposit-services.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
