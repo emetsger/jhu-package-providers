@@ -197,6 +197,7 @@ public class DashMetadataDomWriterTest {
         passFunder = new Funder();
         passFunder.setId(randomUri());
         passFunder.setName("Funder One");
+        passFunder.setLocalKey("harvard:funder:8675309");
 
         passGrant = new Grant();
         passGrant.setId(randomUri());
@@ -327,7 +328,7 @@ public class DashMetadataDomWriterTest {
     public void verifyFundersAndGrants() {
         validate(dimDoc, DashXMLConstants.FUNDER, DC_IDENTIFIER, (e) -> {
             assertEquals(DashXMLConstants.DIM_MDSCHEMA_DASH, e.getAttribute(DIM_MDSCHEMA));
-            assertEquals(passFunder.getId().toString(), e.getTextContent());
+            assertEquals(passFunder.getLocalKey().substring(passFunder.getLocalKey().lastIndexOf(":")), e.getTextContent());
         });
 
         validate(dimDoc, DashXMLConstants.FUNDER, DashXMLConstants.NAME, (e) -> {

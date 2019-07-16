@@ -234,7 +234,8 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                                     dimElement(doc, DashXMLConstants.FUNDER, DashXMLConstants.IDENTIFIER)
                                             .apply(e -> {
                                                 e.setAttribute(DIM_MDSCHEMA, DashXMLConstants.DIM_MDSCHEMA_DASH);
-                                                e.setTextContent(funder.getId().toString());
+                                                String localKey = funder.getLocalKey();
+                                                e.setTextContent(localKey.substring(localKey.lastIndexOf(":")));
                                             });
                                 });
                     });
