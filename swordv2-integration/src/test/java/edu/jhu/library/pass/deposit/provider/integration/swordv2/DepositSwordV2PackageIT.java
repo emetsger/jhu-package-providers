@@ -64,9 +64,9 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
 
         // Replace all the Repository entities in the graph with the repositories defined in the Deposit Services
         // repositories.json with a transport of SWORDv2
-        assertTrue(graphBuilder.walk(Repository.class).count() > 0);
-        graphBuilder.walk(Repository.class).map(PassEntity::getId).forEach(graphBuilder::removeEntity);
-        assertEquals(0, graphBuilder.walk(Repository.class).count());
+        assertTrue(graphBuilder.stream(Repository.class).count() > 0);
+        graphBuilder.stream(Repository.class).map(PassEntity::getId).forEach(graphBuilder::removeEntity);
+        assertEquals(0, graphBuilder.stream(Repository.class).count());
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode dsConfig = mapper.readTree(DepositSwordV2PackageIT.class.getResourceAsStream(REPOSITORIES_JSON));
@@ -79,7 +79,7 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
 
         graph = graphBuilder.build();
 
-        assertEquals(2, graph.walk(Repository.class).count());
+        assertEquals(2, graph.stream(Repository.class).count());
         assertEquals(2, graph.submission().getRepositories().size());
 
         graph.submission().getRepositories().forEach(uri -> {

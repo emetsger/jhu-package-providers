@@ -198,8 +198,8 @@
                                             <DSPACE_ADMIN_PASSWORD>foobar</DSPACE_ADMIN_PASSWORD>
                                             <DSPACE_SUBMITTER_USERNAME>submitter@oapass.org</DSPACE_SUBMITTER_USERNAME>
                                             <DSPACE_SUBMITTER_PASSWORD>moo</DSPACE_SUBMITTER_PASSWORD>
-                                            <DSPACE_COLLECTION_WORKFLOW_HANDLE>123456789/4</DSPACE_COLLECTION_WORKFLOW_HANDLE>
-                                            <DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>123456789/3</DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>
+                                            <DSPACE_COLLECTION_WORKFLOW_HANDLE>123456789/3</DSPACE_COLLECTION_WORKFLOW_HANDLE>
+                                            <DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>123456789/2</DSPACE_COLLECTION_NO-WORKFLOW_HANDLE>
                                             <DSPACE_HOST>${dspace.server}</DSPACE_HOST>
                                             <DSPACE_PORT>${dspace.port}</DSPACE_PORT>
                                             <DSPACE_BASEURI>${dspace.baseuri}</DSPACE_BASEURI>
