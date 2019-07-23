@@ -18,54 +18,56 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
-import com.damnhandy.uri.template.UriTemplate;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.dataconservancy.pass.client.PassClient;
 import org.dataconservancy.pass.deposit.messaging.config.repository.RepositoryConfig;
 import org.dataconservancy.pass.deposit.messaging.status.DefaultDepositStatusProcessor;
 import org.dataconservancy.pass.deposit.messaging.status.DepositStatusResolver;
 import org.dataconservancy.pass.model.Deposit;
+import org.dataconservancy.pass.model.RepositoryCopy;
+import org.dataconservancy.pass.model.Submission;
+import org.dataconservancy.pass.support.messaging.cri.CriticalRepositoryInteraction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
+@Component
 public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
 
-    private static final String GET_RECORD = "GetRecord";
-
-    private static final String GET_RECORD_TEMPLATE = "";
-
-    private static final String LIST_IDENTIFIERS = "ListIdentifiers";
-
-    private static final String LIST_IDENTIFIERS_TEMPLATE = "{{oaiBaseUrl}}{{?verb}}{{?from}}{{?metadataPrefix}}{{?resumptionToken}}";
-
-    static final String DIM_METADATA_PREFIX = "dim";
-
-    static final String HARVARD_NRS_URL_REGEX = "http://nrs.harvard.edu";
-
-    static final Pattern HARVARD_REPOCOPY_PATTERN = Pattern.compile("^" + HARVARD_NRS_URL_REGEX);
+    private OaiUrlBuilder urlBuilder;
 
     private OkHttpClient oaiClient;
 
-    private String oaiBaseUrl;
+    private OaiResponseBodyProcessor process;
 
-    private String metadataPrefix;
+    private PassClient passClient;
 
-    private Matcher repoCopyUriMatcher;
+    private CriticalRepositoryInteraction cri;
 
-    public OaiPmhStatusProcessor(DepositStatusResolver<URI, URI> statusResolver) {
+    @Autowired
+    public OaiPmhStatusProcessor(DepositStatusResolver<URI, URI> statusResolver,
+                                 OaiUrlBuilder urlBuilder,
+                                 OkHttpClient oaiClient,
+                                 OaiResponseBodyProcessor process,
+                                 PassClient passClient,
+                                 CriticalRepositoryInteraction cri) {
         super(statusResolver);
+        this.urlBuilder = urlBuilder;
+        this.oaiClient = oaiClient;
+        this.process = process;
+        this.passClient = passClient;
+        this.cri = cri;
     }
 
     @Override
@@ -75,15 +77,18 @@ public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
             return status;
         }
 
-        // list identifiers from OAI-PMH endpoint since the Submission date (ListIdentifiers)
+        Submission submission = passClient.readResource(deposit.getSubmission(), Submission.class);
+
+        // list identifiers from OAI-PMH endpoint since the Submission date
         //   (check error)
 
         URL listRecords = null;
         String resumptionToken = null;
-        List<URL> recordIdentifiers = new ArrayList<>();
+        List<String> recordIdentifiers = new ArrayList<>();
+        Instant from = submission.getSubmittedDate().toDate().toInstant();
 
         do {
-            listRecords = parameterizeGetRecordsRequest(resumptionToken);
+            listRecords = urlBuilder.listIdentifiers(resumptionToken, from);
 
             // Headers like Accept, From, User-Agent, and authentication are added by the class that configures the
             // OkHttpClient as interceptors
@@ -95,59 +100,121 @@ public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
                             format("Error retrieving %s (code: %s): %s", listRecords, res.code(), res.message()));
                 }
 
-                resumptionToken = processResult(res.body().byteStream(), recordIdentifiers);
+                resumptionToken = encode(process.listIdentifiersResponse(res.body().byteStream(), recordIdentifiers));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } while (resumptionToken != null && resumptionToken.trim().length() > 0);
 
-        // For each identifier, issue a GetRecord request
-        //   (check error)
+        // For each record identifier:
+        for (String oaiRecordIdentifier : recordIdentifiers) {
 
-        
+            //  issue a GetRecord request
+            //      (check error)
 
-        // Parse request body for PASS Submission URI
+            URL getRecord = urlBuilder.getRecord(oaiRecordIdentifier);
+            URL itemUrl;
 
-        // Parse request body for Harvard DSpace Item URL (dc.identifier uri beginning 'http://nrs.harvard.edu')
+            try (Response res = oaiClient.newCall(new Request.Builder()
+                    .url(getRecord)
+                    .build()).execute()) {
 
-        // Resolve the RepositoryCopy for the Submission, and update its RepositoryCopy status and uri
+                if (res.code() != 200) {
+                    throw new RuntimeException(
+                            format("Error retrieving %s (code: %s): %s", getRecord, res.code(), res.message()));
+                }
 
+                //  Parse request body for PASS Submission URI
+                //  Parse request body for Harvard DSpace Item URL (dc.identifier uri beginning 'http://nrs.harvard.edu')
+                itemUrl = process.getRecordResponse(res.body().byteStream(), submission.getId());
 
-
-
-    }
-
-    private URL parameterizeGetRecordsRequest(String resumptionToken) {
-        URL listRecords;
-        try {
-            UriTemplate t = UriTemplate.fromTemplate(LIST_IDENTIFIERS_TEMPLATE)
-                    .set("oaiBaseUrl", oaiBaseUrl)
-                    .set("verb", LIST_IDENTIFIERS)
-                    .set("metadataPrefix", DIM_METADATA_PREFIX)
-                    .set("from", "");
-
-            if (resumptionToken != null && resumptionToken.trim().length() > 0) {
-                t.set("resumptionToken", resumptionToken);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
 
-            listRecords = new URL(t.expand());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            if (itemUrl == null) {
+                // no pass submission found or no DSpace Item URL found, move on
+                continue;
+            }
+
+            //  Resolve the RepositoryCopy for the Submission, and update its RepositoryCopy access url and external ids
+            //  the caller of this processor will update the RepositoryCopy.copyStatus
+
+            cri.performCritical(deposit.getRepositoryCopy(), RepositoryCopy.class,
+                    (criRepoCopy) -> criRepoCopy.getCopyStatus() != RepositoryCopy.CopyStatus.COMPLETE,
+                    (criRepoCopy) -> criRepoCopy.getAccessUrl() != null
+                            && criRepoCopy.getExternalIds() != null
+                            && criRepoCopy.getExternalIds().size() > 0,
+                    (criRepoCopy) -> {
+                        criRepoCopy.setAccessUrl(URI.create(itemUrl.toString()));
+                        criRepoCopy.setExternalIds(Collections.singletonList(itemUrl.toString()));
+                        return criRepoCopy;
+                    });
+
+            break;
         }
-        return listRecords;
+
+        return status;
     }
 
-    /**
-     * Processes a batch of results from OAI-PMH: if a valid response, populate records.  If response is empty (an
-     * OAI-PMH "no matching records" error) do nothing.  Otherwise throw a RuntimeException with the error message from
-     * the response.  Return a resumption token if present, otherwise {@code null}.
-     *
-     * @param result the OAI-PMH response body
-     * @param records the List of URLs to populate using the records from the response body
-     * @return String resumptionToken, may be {@code null}
-     */
-    String processResult(InputStream result, List<URL> records) {
+    static String encode(String resumptionToken) {
+        if (resumptionToken == null || resumptionToken.trim().length() == 0) {
+            return resumptionToken;
+        }
 
+        char[] illegal = new char[] {
+                '/',
+                '?',
+                '#',
+                '=',
+                '&',
+                ':',
+                ';',
+                ' ',
+                '%',
+                '+',
+                '@',
+                '$',
+                ',',
+                '"',
+                '>',
+                '<'};
+
+        String[] encoding = {
+                "%2F",
+                "%3F",
+                "%23",
+                "%3D",
+                "%26",
+                "%3A",
+                "%3B",
+                "%20",
+                "%25",
+                "%2B",
+                "%40",
+                "%24",
+                "%2C",
+                "%22",
+                "%3E",
+                "%3C"};
+
+        StringBuilder sb = new StringBuilder(resumptionToken);
+
+        int replacementOffset = 0;
+
+        for (int i = 0, offset = 0; i < resumptionToken.length(); i++, offset = (i + replacementOffset)) {
+            char candidate = resumptionToken.charAt(i);
+
+            for (int j = 0; j < illegal.length; j++) {
+                if (candidate == illegal[j]) {
+                    sb.replace(offset, offset+1, encoding[j]);
+                    replacementOffset += encoding[j].length() - 1;
+                    break;
+                }
+            }
+        }
+
+        return sb.toString();
     }
 
 }
