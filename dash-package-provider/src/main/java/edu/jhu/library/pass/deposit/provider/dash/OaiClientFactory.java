@@ -22,6 +22,7 @@ import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -29,12 +30,16 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class OaiClientFactory implements FactoryBean<OkHttpClient> {
 
+    @Autowired
     private long readTimeoutMs = 30000;
 
+    @Autowired
     private long connectTimeoutMs = 30000;
 
+    @Autowired
     private String oaiUser;
 
+    @Autowired
     private String oaiPassword;
 
     @Override

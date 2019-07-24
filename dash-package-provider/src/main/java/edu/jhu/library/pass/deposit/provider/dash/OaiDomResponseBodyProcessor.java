@@ -18,14 +18,16 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
@@ -88,8 +90,7 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
             throw new RuntimeException(e);
         }
 
-        AtomicReference<Node> result = new AtomicReference<>();
-        if (shouldIgnore(dom, LIST_IDENTIFIERS, result, singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
+        if (shouldIgnore(dom, LIST_IDENTIFIERS, new AtomicReference<>(), singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
             return null;
         }
 
@@ -111,23 +112,30 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
         Node request = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_REQUEST).item(0);
         OaiMetadata meta = OaiMetadata.forPrefix(request.getAttributes().getNamedItem(OAI_METADATA_PREFIX).getTextContent());
 
-        AtomicReference<Node> result = new AtomicReference<>();
-        if (shouldIgnore(dom, GET_RECORD, result, Collections.emptyList())) {
+        if (shouldIgnore(dom, GET_RECORD, new AtomicReference<>(), Collections.emptyList())) {
             return null;
         }
 
-        InputStream metadataDom = IOUtils.toInputStream(
-                        dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_METADATA).item(0).getTextContent());
-
         switch (meta) {
             case DIM:
-
-                break;
-
+                return asStream(dom.getElementsByTagNameNS(meta.getNamespace(), "field"))
+                        .filter(node -> "dc".equals(node.getAttributes().getNamedItem("mdschema").getTextContent()))
+                        .filter(node -> "identifier".equals(node.getAttributes().getNamedItem("element").getTextContent()))
+                        .filter(node -> "uri".equals(node.getAttributes().getNamedItem("qualifier").getTextContent()))
+                        .map(Node::getTextContent)
+                        .filter(uri -> HARVARD_REPOCOPY_PATTERN.matcher(uri).matches())
+                        .findAny()
+                        .map(uri -> {
+                            try {
+                                return new URL(uri);
+                            } catch (MalformedURLException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .orElse(null);
             default:
                 throw new RuntimeException("Unable to parse OAI metadata: " + meta);
         }
-
 
     }
 
