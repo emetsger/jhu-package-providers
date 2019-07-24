@@ -26,6 +26,7 @@ import java.net.URL;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 @Component
 class OaiUrlBuilder {
@@ -36,9 +37,9 @@ class OaiUrlBuilder {
 
     static final String DIM_METADATA_PREFIX = "dim";
 
-    private static final String GET_RECORD_TEMPLATE = "{{oaiBaseUrl}}{{?verb}}{{?from}}{{?metadataPrefix}}{{?resumptionToken}}";
+    private static final String GET_RECORD_TEMPLATE = "{+oaiBaseUrl}{?verb,metadataPrefix,identifier}";
 
-    private static final String LIST_IDENTIFIERS_TEMPLATE = "{{oaiBaseUrl}}{{?verb}}{{?from}}{{?metadataPrefix}}{{?resumptionToken}}";
+    private static final String LIST_IDENTIFIERS_TEMPLATE = "{+oaiBaseUrl}{?verb,from,metadataPrefix,resumptionToken}";
 
     private final DateTimeFormatter utcDate = DateTimeFormatter.ISO_DATE.withZone(ZoneId.of("UTC"));
 
@@ -70,6 +71,7 @@ class OaiUrlBuilder {
     }
 
     URL getRecord(String recordId) {
+        Objects.requireNonNull(recordId, "OAI-PMH recordId must not be null");
         try {
             UriTemplate t = UriTemplate.fromTemplate(GET_RECORD_TEMPLATE)
                     .set("oaiBaseUrl", oaiBaseUrl)

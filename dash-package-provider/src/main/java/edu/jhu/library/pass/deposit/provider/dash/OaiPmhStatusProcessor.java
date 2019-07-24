@@ -157,9 +157,9 @@ public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
         return status;
     }
 
-    static String encode(String resumptionToken) {
-        if (resumptionToken == null || resumptionToken.trim().length() == 0) {
-            return resumptionToken;
+    static String encode(String token) {
+        if (token == null || token.trim().length() == 0) {
+            return token;
         }
 
         char[] illegal = new char[] {
@@ -198,12 +198,12 @@ public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
                 "%3E",
                 "%3C"};
 
-        StringBuilder sb = new StringBuilder(resumptionToken);
+        StringBuilder sb = new StringBuilder(token);
 
         int replacementOffset = 0;
 
-        for (int i = 0, offset = 0; i < resumptionToken.length(); i++, offset = (i + replacementOffset)) {
-            char candidate = resumptionToken.charAt(i);
+        for (int i = 0, offset = 0; i < token.length(); i++, offset = (i + replacementOffset)) {
+            char candidate = token.charAt(i);
 
             for (int j = 0; j < illegal.length; j++) {
                 if (candidate == illegal[j]) {
