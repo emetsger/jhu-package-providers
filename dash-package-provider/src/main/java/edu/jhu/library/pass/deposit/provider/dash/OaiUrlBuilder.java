@@ -19,6 +19,7 @@
 package edu.jhu.library.pass.deposit.provider.dash;
 
 import com.damnhandy.uri.template.UriTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -45,6 +46,7 @@ class OaiUrlBuilder {
 
     private String oaiBaseUrl;
 
+    @Autowired
     OaiUrlBuilder(String oaiBaseUrl) {
         this.oaiBaseUrl = oaiBaseUrl;
     }
