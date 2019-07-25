@@ -18,38 +18,29 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.dataconservancy.pass.client.PassClient;
 import org.dataconservancy.pass.deposit.messaging.config.repository.RepositoryConfig;
 import org.dataconservancy.pass.deposit.messaging.status.DefaultDepositStatusProcessor;
 import org.dataconservancy.pass.deposit.messaging.status.DepositStatusResolver;
 import org.dataconservancy.pass.model.Deposit;
 import org.dataconservancy.pass.model.RepositoryCopy;
+import org.dataconservancy.pass.model.RepositoryCopy.CopyStatus;
 import org.dataconservancy.pass.model.Submission;
 import org.dataconservancy.pass.support.messaging.cri.CriticalRepositoryInteraction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 @Component
 public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
 
-    private OaiUrlBuilder urlBuilder;
-
-    private OkHttpClient oaiClient;
-
-    private OaiResponseBodyProcessor process;
+    private OaiRequestProcessor requestProcessor;
 
     private PassClient passClient;
 
@@ -57,164 +48,59 @@ public class OaiPmhStatusProcessor extends DefaultDepositStatusProcessor {
 
     @Autowired
     public OaiPmhStatusProcessor(DepositStatusResolver<URI, URI> statusResolver,
-                                 OaiUrlBuilder urlBuilder,
-                                 OkHttpClient oaiClient,
-                                 OaiResponseBodyProcessor process,
+                                 OaiRequestProcessor requestProcessor,
                                  PassClient passClient,
                                  CriticalRepositoryInteraction cri) {
         super(statusResolver);
-        this.urlBuilder = urlBuilder;
-        this.oaiClient = oaiClient;
-        this.process = process;
         this.passClient = passClient;
         this.cri = cri;
+        this.requestProcessor = requestProcessor;
     }
 
     @Override
     public Deposit.DepositStatus process(Deposit deposit, RepositoryConfig repositoryConfig) {
         Deposit.DepositStatus status = super.process(deposit, repositoryConfig);
+
+        // A status of ACCEPTED indicates that the Item has completed the DSpace workflow and has been accepted
+        // into the DSpace archive.
+        //
+        // If the Item hasn't been accepted into the archive, then it won't have an Item URL, so there's no point in
+        // continuing.
         if (Deposit.DepositStatus.ACCEPTED != status) {
             return status;
         }
 
         Submission submission = passClient.readResource(deposit.getSubmission(), Submission.class);
-
-        // list identifiers from OAI-PMH endpoint since the Submission date
-        //   (check error)
-
-        URL listRecords = null;
-        String resumptionToken = null;
-        List<String> recordIdentifiers = new ArrayList<>();
         Instant from = submission.getSubmittedDate().toDate().toInstant();
 
-        do {
-            listRecords = urlBuilder.listIdentifiers(resumptionToken, from);
+        // The default status returned by this method is DepositStatus.SUBMITTED.  If an OAI-PMH record matching
+        // this Submission is found, and the record contains a DSpace Item URL, the status will be updated to
+        // DepositStatus.ACCEPTED.  Until then, the DepositStatus remains as SUBMITTED.
+        AtomicReference<Deposit.DepositStatus> result = new AtomicReference<>(Deposit.DepositStatus.SUBMITTED);
 
-            // Headers like Accept, From, User-Agent, and authentication are added by the class that configures the
-            // OkHttpClient as interceptors
-            try (Response res = oaiClient.newCall(new Request.Builder()
-                    .url(listRecords)
-                    .build()).execute()) {
-                if (res.code() != 200) {
-                    throw new RuntimeException(
-                            format("Error retrieving %s (code: %s): %s", listRecords, res.code(), res.message()));
-                }
+        // Retrieve all OAI-PMH records from the Submission.submittedDate to the present.  Analyze each record,
+        // searching for a record that contains the PASS Submission URI and a DSpace Item URL.
+        //
+        // If a match is found, update the RepositoryCopy with the DSpace Item URL, and set the DepositStatus to
+        // ACCEPTED.  If no match is found, leave the DepositStatus as SUBMITTED.
+        requestProcessor.analyzeRecords(
+                submission.getId(), requestProcessor.listIdentifiers(from))
+                    .ifPresent(repoCopyUrl -> {
+                                cri.performCritical(deposit.getRepositoryCopy(), RepositoryCopy.class,
+                                        (criRepoCopy) -> criRepoCopy.getCopyStatus() != CopyStatus.COMPLETE,
+                                        (criRepoCopy) -> criRepoCopy.getAccessUrl() != null
+                                                && criRepoCopy.getExternalIds() != null
+                                                && criRepoCopy.getExternalIds().size() > 0,
+                                        (criRepoCopy) -> {
+                                            // The super class will update the RepositoryCopy.copyStatus
+                                            criRepoCopy.setAccessUrl(URI.create(repoCopyUrl.toString()));
+                                            criRepoCopy.setExternalIds(singletonList(repoCopyUrl.toString()));
+                                            return criRepoCopy;
+                                        });
+                                result.set(Deposit.DepositStatus.ACCEPTED);
+                            }
+                    );
 
-                resumptionToken = encode(process.listIdentifiersResponse(res.body().byteStream(), recordIdentifiers));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } while (resumptionToken != null && resumptionToken.trim().length() > 0);
-
-        // For each record identifier:
-        for (String oaiRecordIdentifier : recordIdentifiers) {
-
-            //  issue a GetRecord request
-            //      (check error)
-
-            URL getRecord = urlBuilder.getRecord(oaiRecordIdentifier);
-            URL itemUrl;
-
-            try (Response res = oaiClient.newCall(new Request.Builder()
-                    .url(getRecord)
-                    .build()).execute()) {
-
-                if (res.code() != 200) {
-                    throw new RuntimeException(
-                            format("Error retrieving %s (code: %s): %s", getRecord, res.code(), res.message()));
-                }
-
-                //  Parse request body for PASS Submission URI
-                //  Parse request body for Harvard DSpace Item URL (dc.identifier uri beginning 'http://nrs.harvard.edu')
-                itemUrl = process.getRecordResponse(res.body().byteStream(), submission.getId());
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (itemUrl == null) {
-                // no pass submission found or no DSpace Item URL found, move on
-                continue;
-            }
-
-            //  Resolve the RepositoryCopy for the Submission, and update its RepositoryCopy access url and external ids
-            //  the caller of this processor will update the RepositoryCopy.copyStatus
-
-            cri.performCritical(deposit.getRepositoryCopy(), RepositoryCopy.class,
-                    (criRepoCopy) -> criRepoCopy.getCopyStatus() != RepositoryCopy.CopyStatus.COMPLETE,
-                    (criRepoCopy) -> criRepoCopy.getAccessUrl() != null
-                            && criRepoCopy.getExternalIds() != null
-                            && criRepoCopy.getExternalIds().size() > 0,
-                    (criRepoCopy) -> {
-                        criRepoCopy.setAccessUrl(URI.create(itemUrl.toString()));
-                        criRepoCopy.setExternalIds(Collections.singletonList(itemUrl.toString()));
-                        return criRepoCopy;
-                    });
-
-            break;
-        }
-
-        return status;
+        return result.get();
     }
-
-    static String encode(String token) {
-        if (token == null || token.trim().length() == 0) {
-            return token;
-        }
-
-        char[] illegal = new char[] {
-                '/',
-                '?',
-                '#',
-                '=',
-                '&',
-                ':',
-                ';',
-                ' ',
-                '%',
-                '+',
-                '@',
-                '$',
-                ',',
-                '"',
-                '>',
-                '<'};
-
-        String[] encoding = {
-                "%2F",
-                "%3F",
-                "%23",
-                "%3D",
-                "%26",
-                "%3A",
-                "%3B",
-                "%20",
-                "%25",
-                "%2B",
-                "%40",
-                "%24",
-                "%2C",
-                "%22",
-                "%3E",
-                "%3C"};
-
-        StringBuilder sb = new StringBuilder(token);
-
-        int replacementOffset = 0;
-
-        for (int i = 0, offset = 0; i < token.length(); i++, offset = (i + replacementOffset)) {
-            char candidate = token.charAt(i);
-
-            for (int j = 0; j < illegal.length; j++) {
-                if (candidate == illegal[j]) {
-                    sb.replace(offset, offset+1, encoding[j]);
-                    replacementOffset += encoding[j].length() - 1;
-                    break;
-                }
-            }
-        }
-
-        return sb.toString();
-    }
-
 }

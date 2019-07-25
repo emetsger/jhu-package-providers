@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.DIM_METADATA_PREFIX;
 import static org.junit.Assert.*;
 
 /**
@@ -42,7 +43,7 @@ public class OaiUrlBuilderTest {
 
     @Test
     public void listIdentifiers() {
-        URL actual = underTest.listIdentifiers(null, null);
+        URL actual = underTest.listIdentifiers(DIM_METADATA_PREFIX, null, null);
 
         assertTrue(actual.toString().startsWith(BASE_URL));
         assertFalse(actual.getQuery().contains("resumptionToken"));
@@ -53,7 +54,7 @@ public class OaiUrlBuilderTest {
 
     @Test
     public void listIdentifiersWithToken() {
-        URL actual = underTest.listIdentifiers("moo", null);
+        URL actual = underTest.listIdentifiers(DIM_METADATA_PREFIX, null, "moo");
 
         assertTrue(actual.toString().startsWith(BASE_URL));
         assertTrue(actual.getQuery().contains("resumptionToken=moo"));
@@ -63,7 +64,7 @@ public class OaiUrlBuilderTest {
     public void listIdentifiersWithFrom() {
         Instant now = Instant.now();
         String formattedNow = DateTimeFormatter.ISO_DATE.withZone(ZoneId.of("UTC")).format(now);
-        URL actual = underTest.listIdentifiers(null, now);
+        URL actual = underTest.listIdentifiers(DIM_METADATA_PREFIX, now, null);
 
         assertTrue(actual.toString().startsWith(BASE_URL));
         assertTrue(actual.getQuery().contains("from=" + formattedNow));
@@ -71,7 +72,7 @@ public class OaiUrlBuilderTest {
 
     @Test
     public void getRecord() {
-        URL actual = underTest.getRecord("recordId");
+        URL actual = underTest.getRecord("recordId", DIM_METADATA_PREFIX);
         assertTrue(actual.toString().startsWith(BASE_URL));
         assertTrue(actual.getQuery().contains("verb=GetRecord"));
         assertTrue(actual.getQuery().contains("metadataPrefix=dim"));
@@ -80,6 +81,11 @@ public class OaiUrlBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void getRecordNullIdentifier() {
-        underTest.getRecord(null);
+        underTest.getRecord(null, DIM_METADATA_PREFIX);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getRecordNullPrefix() {
+        underTest.getRecord("moo", null);
     }
 }

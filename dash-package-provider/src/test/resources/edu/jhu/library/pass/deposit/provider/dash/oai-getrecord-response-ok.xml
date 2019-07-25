@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="static/style.xsl"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2019-07-25T14:39:18Z</responseDate>
+    <request verb="GetRecord" identifier="oai:dash.harvard.edu:1/40991018" metadataPrefix="dim">https://dash.harvard.edu/oai/request</request>
+    <GetRecord>
+        <record>
+            <header>
+                <identifier>oai:dash.harvard.edu:1/40991018</identifier>
+                <datestamp>2019-07-23T19:00:39Z</datestamp>
+                <setSpec>com_1_1</setSpec>
+                <setSpec>col_1_2</setSpec>
+            </header>
+            <metadata>
+                <dim:dim xmlns:dim="http://www.dspace.org/xmlns/dspace/dim" xmlns:doc="http://www.lyncode.com/xoai" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.dspace.org/xmlns/dspace/dim http://www.dspace.org/schema/dim.xsd">
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="93aeebc8668831bdf4b48b415ca3ab69">Jaskula, Jean-Christophe</dim:field>
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="1ac682ceb42941136b45d9fe3cde9e38">Shields, Brendan</dim:field>
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="c6c5da22b0d39d345ffa11de8b18b738">Bauch, Erik</dim:field>
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="536bd6b0ca8f27c224dc37815a35b5b0">Lukin, Mikhail</dim:field>
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="a1b55269de1646b8af243c672c0cca11">Trofimov, Alexei</dim:field>
+                    <dim:field mdschema="dc" element="contributor" qualifier="author" authority="cf73f11339e09a90044316de1c5e5642">Walsworth, Ronald</dim:field>
+                    <dim:field mdschema="dc" element="date" qualifier="accessioned">2019-07-23T15:00:39Z</dim:field>
+                    <dim:field mdschema="dc" element="date" qualifier="issued">2019-06-03</dim:field>
+                    <dim:field mdschema="dc" element="date" qualifier="available">2019-07-23T15:00:39Z</dim:field>
+                    <dim:field mdschema="dc" element="identifier" qualifier="citation" lang="en_US">Jaskula, J.-C., B. J. Shields, E. Bauch, M. D. Lukin, A. S. Trifonov, and R. L. Walsworth. 2019. Improved Quantum Sensing with a Single Solid-State Spin via Spin-to-Charge Conversion. Physical Review Applied 11: 064003.</dim:field>
+                    <dim:field mdschema="dc" element="identifier" qualifier="issn" lang="en_US">2331-7019</dim:field>
+                    <dim:field mdschema="dc" element="identifier" qualifier="uri" lang="*">http://nrs.harvard.edu/urn-3:HUL.InstRepos:40991018</dim:field>
+                    <dim:field mdschema="dc" element="identifier" qualifier="doi">10.1103/physrevapplied.11.064003</dim:field>
+                    <dim:field mdschema="dc" element="description" qualifier="abstract" lang="en_US">Efficient optical read-out of single, solid-state electronic spins at room temperature is a key challenge for nanoscale quantum sensing. Nitrogen-vacancy color centers in diamond have a fast optical spin-state read-out mechanism, but it provides little information in a single shot, because the spin state is destroyed before many photons can be collected. Recently, a technique based on spin-to-charge conversion (SCC) was demonstrated that circumvents this problem by converting the spin state to a long-lived charge state. Here, we study how the choice of spin read-out technique impacts the performance of a single nitrogen-vacancy center in bulk diamond for quantum-sensing applications. Specifically, we show that the SCC technique results in an order-of-magnitude reduction in spin read-out noise per shot and a factor of 5 increase in ac-magnetometry sensitivity compared with the conventional optical read-out method. Crucially, these improvements are obtained for a low collection efficiency and bulk diamond geometry, which opens up the SCC technique to a wide array of sensing applications. We identify applications where single-shot spin read-out noise, rather than sensitivity, is the limiting factor (e.g., low duty cycle pulsed sequences in biomagnetometry involving long dead times).</dim:field>
+                    <dim:field mdschema="dc" element="description" qualifier="version" lang="en_US">Accepted Manuscript</dim:field>
+                    <dim:field mdschema="dc" element="language" qualifier="iso" lang="en_US">en_US</dim:field>
+                    <dim:field mdschema="dc" element="publisher" lang="en_US">American Physical Society (APS)</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">optically detected magnetic resonance</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">coherent control</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">solid-state detectors</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">nitrogen vacancy centers in diamond</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">quantum sensing</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">quantum information with solid state qubits</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">optoelectronics</dim:field>
+                    <dim:field mdschema="dc" element="subject" lang="en_US">noise</dim:field>
+                    <dim:field mdschema="dc" element="title" lang="en_US">Improved Quantum Sensing with a Single Solid-State Spin via Spin-to-Charge Conversion</dim:field>
+                    <dim:field mdschema="dc" element="type" lang="en_US">Journal Article</dim:field>
+                    <dim:field mdschema="dc" element="relation" qualifier="journal" lang="en_US">Physical Review Applied</dim:field>
+                    <dim:field mdschema="dc" element="source" qualifier="journal">Phys. Rev. Applied</dim:field>
+                    <dim:field mdschema="dash" element="license">OAP</dim:field>
+                    <dim:field mdschema="dash" element="depositing" qualifier="author" authority="536bd6b0ca8f27c224dc37815a35b5b0" confidence="600">Lukin, Mikhail</dim:field>
+                    <dim:field mdschema="dash" element="workflow" qualifier="comments" lang="en_US">FAR2017</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">U. S. Army Research Laboratory</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">U. S. Army Research Office</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">DARPA Quantum Assisted Sensing And Readout (QuASAR) program</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">Gordon and Betty Moore Foundation</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">Vannevar Bush Fellowship</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="name" lang="en_US">National Science Foundation Electronics, Photonics and Magnetic Devices (EPMD)</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="award" lang="en_US">W911NF1510548</dim:field>
+                    <dim:field mdschema="dash" element="funder" qualifier="award" lang="en_US">HR0011-11-C-0073</dim:field>
+                    <dim:field mdschema="dash" element="source" qualifier="volume">11;6</dim:field>
+                </dim:dim>
+            </metadata>
+        </record>
+    </GetRecord>
+</OAI-PMH>

@@ -18,42 +18,30 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
-import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static edu.jhu.library.pass.deposit.provider.dash.DashUtil.asStream;
 import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.GET_RECORD;
 import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.LIST_IDENTIFIERS;
 import static java.util.Collections.singletonList;
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterator.SIZED;
-import static java.util.stream.StreamSupport.stream;
 
 @Component
 public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
-
-    static final String HARVARD_NRS_URL_REGEX = "http://nrs.harvard.edu";
-
-    static final Pattern HARVARD_REPOCOPY_PATTERN = Pattern.compile("^" + HARVARD_NRS_URL_REGEX);
 
     private static final String ERROR_CONDITIONS = "https://www.openarchives.org/OAI/openarchivesprotocol.html#ErrorConditions";
 
@@ -77,9 +65,24 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
 
     private static final String OAI_PMH_NS = "http://www.openarchives.org/OAI/2.0/";
 
-    private Matcher repoCopyUriMatcher;
+    private RepositoryCopyLocationAnalyzer analyzer;
 
     private DocumentBuilderFactory dbf;
+
+    private String passBaseUrl;
+
+    private String repoCopyBaseUrl;
+
+    @Autowired
+    public OaiDomResponseBodyProcessor(RepositoryCopyLocationAnalyzer analyzer,
+                                       DocumentBuilderFactory dbf,
+                                       String passBaseUrl,
+                                       String repoCopyBaseUrl) {
+        this.analyzer = analyzer;
+        this.dbf = dbf;
+        this.passBaseUrl = passBaseUrl;
+        this.repoCopyBaseUrl = repoCopyBaseUrl;
+    }
 
     @Override
     public String listIdentifiersResponse(InputStream response, List<String> records) {
@@ -90,14 +93,19 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
             throw new RuntimeException(e);
         }
 
-        if (shouldIgnore(dom, LIST_IDENTIFIERS, new AtomicReference<>(), singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
+        if (shouldIgnore(dom, LIST_IDENTIFIERS, singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
             return null;
         }
 
         asStream(dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_IDENTIFIER))
                 .forEach(node -> records.add(node.getTextContent()));
 
-        return dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_RESUMPTION_TOKEN).item(0).getTextContent();
+        NodeList tokenNode = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_RESUMPTION_TOKEN);
+        if (tokenNode != null && tokenNode.getLength() == 1) {
+            return tokenNode.item(0).getTextContent();
+        }
+
+        return null;
     }
 
     @Override
@@ -112,56 +120,40 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
         Node request = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_REQUEST).item(0);
         OaiMetadata meta = OaiMetadata.forPrefix(request.getAttributes().getNamedItem(OAI_METADATA_PREFIX).getTextContent());
 
-        if (shouldIgnore(dom, GET_RECORD, new AtomicReference<>(), Collections.emptyList())) {
+        if (shouldIgnore(dom, GET_RECORD, Collections.emptyList())) {
             return null;
         }
 
         switch (meta) {
             case DIM:
-                return asStream(dom.getElementsByTagNameNS(meta.getNamespace(), "field"))
-                        .filter(node -> "dc".equals(node.getAttributes().getNamedItem("mdschema").getTextContent()))
-                        .filter(node -> "identifier".equals(node.getAttributes().getNamedItem("element").getTextContent()))
-                        .filter(node -> "uri".equals(node.getAttributes().getNamedItem("qualifier").getTextContent()))
-                        .map(Node::getTextContent)
-                        .filter(uri -> HARVARD_REPOCOPY_PATTERN.matcher(uri).matches())
-                        .findAny()
-                        .map(uri -> {
-                            try {
-                                return new URL(uri);
-                            } catch (MalformedURLException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .orElse(null);
+                Node mdNode = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_METADATA).item(0);
+                Document mdDoc = null;
+                try {
+                    mdDoc = dbf.newDocumentBuilder().newDocument();
+                    mdDoc.appendChild(mdDoc.importNode(mdNode, true));
+                } catch (ParserConfigurationException e) {
+                    throw new RuntimeException(e);
+                }
+                return analyzer.analyze(mdDoc, submissionUri,
+                        ((mdSchema, element, qualifier, textContent) -> {
+                            return textContent.startsWith(passBaseUrl);
+
+                        }),
+                        ((mdSchema, element, qualifier, textContent) -> {
+                            return textContent.startsWith(repoCopyBaseUrl);
+                        }));
             default:
                 throw new RuntimeException("Unable to parse OAI metadata: " + meta);
         }
-
     }
 
-    private static Stream<Node> asStream(NodeList nodeList) {
-        int characteristics = SIZED | ORDERED;
-        Stream<Node> nodeStream = stream(new AbstractSpliterator<Node>(nodeList.getLength(), characteristics) {
-            int index = 0;
-
-            @Override
-            public boolean tryAdvance(Consumer<? super Node> action) {
-                if (nodeList.getLength() == index) {
-                    return false;
-                }
-
-                action.accept(nodeList.item(index++));
-
-                return true;
-            }
-        }, false);
-
-        return nodeStream;
+    private static boolean shouldIgnore(Document dom, String verb, Collection<String> toIgnore) {
+        return shouldIgnore(dom, verb, new AtomicReference<>(), toIgnore);
     }
 
     private static boolean shouldIgnore(Document dom, String verb, AtomicReference<Node> node, Collection<String> toIgnore) {
         NodeList errors = null;
-        if ((errors = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_ERROR)) != null) {
+        if ((errors = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_ERROR)) != null && errors.getLength() > 0) {
             if (errors.getLength() == 1
                     && errors.item(0).getAttributes().getNamedItem(OAI_ERROR_CODE) != null
                     && toIgnore.contains(errors.item(0).getAttributes().getNamedItem(OAI_ERROR_CODE).getTextContent())) {
@@ -169,9 +161,9 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
             }
 
             String errorMessage = "OAI-PMH request failed with the following error(s):\n" +
-                    asStream(errors).map(error -> String.format("\n  Code: %s, Message: %s\n",
-                            error.getAttributes().getNamedItem(OAI_ERROR_CODE), error.getTextContent()))
-                            .collect(Collectors.joining(", "));
+                    asStream(errors).map(error -> String.format("  Code: %s, Message: %s",
+                            error.getAttributes().getNamedItem(OAI_ERROR_CODE), error.getNodeValue()))
+                            .collect(Collectors.joining("\n"));
             throw new RuntimeException(errorMessage);
         }
 

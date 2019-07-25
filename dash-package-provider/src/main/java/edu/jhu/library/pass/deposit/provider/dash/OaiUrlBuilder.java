@@ -49,12 +49,13 @@ class OaiUrlBuilder {
         this.oaiBaseUrl = oaiBaseUrl;
     }
 
-    URL listIdentifiers(String resumptionToken, Instant from) {
+    URL listIdentifiers(String metadataPrefix, Instant from, String resumptionToken) {
+        Objects.requireNonNull(metadataPrefix, "OAI-PMH metadata prefix must not be null");
         try {
             UriTemplate t = UriTemplate.fromTemplate(LIST_IDENTIFIERS_TEMPLATE)
                     .set("oaiBaseUrl", oaiBaseUrl)
                     .set("verb", LIST_IDENTIFIERS)
-                    .set("metadataPrefix", DIM_METADATA_PREFIX);
+                    .set("metadataPrefix", metadataPrefix);
 
             if (from != null) {
                 t.set("from", utcDate.format(from));
@@ -70,14 +71,15 @@ class OaiUrlBuilder {
         }
     }
 
-    URL getRecord(String recordId) {
+    URL getRecord(String recordId, String metadataPrefix) {
         Objects.requireNonNull(recordId, "OAI-PMH recordId must not be null");
+        Objects.requireNonNull(metadataPrefix, "OAI-PMH metadata prefix must not be null");
         try {
             UriTemplate t = UriTemplate.fromTemplate(GET_RECORD_TEMPLATE)
                     .set("oaiBaseUrl", oaiBaseUrl)
                     .set("verb", GET_RECORD)
                     .set("identifier", recordId)
-                    .set("metadataPrefix", DIM_METADATA_PREFIX);
+                    .set("metadataPrefix", metadataPrefix);
 
             return new URL(t.expand());
         } catch (MalformedURLException e) {

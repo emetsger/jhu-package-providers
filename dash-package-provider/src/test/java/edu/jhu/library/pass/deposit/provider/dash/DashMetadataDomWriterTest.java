@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static edu.jhu.library.pass.deposit.provider.dash.DashUtil.asStream;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DCT_PROV;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_ABSTRACT;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_CONTRIBUTOR;
@@ -407,26 +408,6 @@ public class DashMetadataDomWriterTest {
                 .filter(e -> fieldName.equals(e.getAttribute(DIM_ELEMENT)) && qualifier.equals(e.getAttribute(DIM_QUALIFIER)))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Missing expected DIM field " + fieldName + " with qualifier " + qualifier));
-    }
-
-    private static Stream<Node> asStream(NodeList nodeList) {
-        int characteristics = SIZED | ORDERED;
-        Stream<Node> nodeStream = stream(new Spliterators.AbstractSpliterator<Node>(nodeList.getLength(), characteristics) {
-            int index = 0;
-
-            @Override
-            public boolean tryAdvance(Consumer<? super Node> action) {
-                if (nodeList.getLength() == index) {
-                    return false;
-                }
-
-                action.accept(nodeList.item(index++));
-
-                return true;
-            }
-        }, false);
-
-        return nodeStream;
     }
 
     private static void writeDim(Element dimDoc, OutputStream out) {

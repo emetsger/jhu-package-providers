@@ -18,11 +18,17 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
+import org.w3c.dom.Document;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
 
+/**
+ * Processes OAI-PMH API responses.  The implementation determines the metadata prefix, and must be
+ * matched with the appropriate {@link RepositoryCopyLocationAnalyzer}.
+ */
 interface OaiResponseBodyProcessor {
 
     /**
@@ -46,8 +52,30 @@ interface OaiResponseBodyProcessor {
      */
     URL getRecordResponse(InputStream response, URI submissionUri);
 
-    interface MetadataProcessor {
-        String process(InputStream metadata, OaiMetadata scheme, URI submissionUri);
+    /**
+     * Processes metadata of an OAI-PMH record, and determines if it contains a URL that pointing to a RepositoryCopy
+     * of the Submission.
+     */
+    @FunctionalInterface
+    interface RepositoryCopyLocationAnalyzer {
+
+        /**
+         * Parses the supplied metadata.  If the analyzer determines that the metadata represents or describes the
+         * PASS Submission, it will return a URL that provides the location of the Submission as described in the
+         * metadata.
+         *
+         * @param metadata
+         * @param submissionUri
+         * @return
+         */
+        URL analyze(Document metadata, URI submissionUri, FieldMatcher submissionMatcher, FieldMatcher repoCopyMatcher);
+    }
+
+    @FunctionalInterface
+    interface FieldMatcher {
+
+        boolean matches(String mdSchema, String element, String qualifier, String textContent);
+
     }
 
 }
