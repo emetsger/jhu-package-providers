@@ -19,17 +19,26 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okio.Buffer;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -144,6 +153,46 @@ public class OaiOkHttpRequestProcessorTest {
     }
 
     @Test
+    public void analyzeRecordsMatchingUrl() throws MalformedURLException {
+        List<String> randomIds = populateList(10);
+        Random rand = new Random();
+        int match = rand.nextInt(11);
+
+        URI submissionUri = URI.create(UUID.randomUUID().toString());
+        URL itemUrl = new URL("http://dash.harvard.edu/");
+
+        URL url = webServer.url("/").url();
+
+        for (int i = 0; i < randomIds.size(); i++) {
+            MockResponse res = new MockResponse();
+            Buffer buf = new Buffer();
+            if (i == match) {
+                buf.write("match".getBytes());
+            } else {
+                buf.write("moo".getBytes());
+            }
+            res.setBody(buf);
+            webServer.enqueue(res);
+        }
+
+        when(urlBuilder.getRecord(any(), any())).thenReturn(url);
+
+        when(processor.getRecordResponse(any(), eq(submissionUri))).thenAnswer(inv -> {
+            String foo = IOUtils.toString(((InputStream) inv.getArgument(0)), "UTF-8");
+            if ("match".equals(foo)) {
+                return itemUrl;
+            }
+
+            return null;
+        });
+
+        Optional<URL> actual = underTest.analyzeRecords(submissionUri, randomIds.stream());
+        assertTrue(actual.isPresent());
+        assertEquals(itemUrl, actual.get());
+        assertEquals(match + 1, webServer.getRequestCount());
+    }
+
+    @Test
     public void encodeResumptionTokenDate() {
         String token = "10/20/1999";
         String expected = "10%2F20%2F1999";
@@ -166,4 +215,14 @@ public class OaiOkHttpRequestProcessorTest {
 
         assertEquals(expected, OaiOkHttpRequestProcessor.encode(token));
     }
+
+    private List<String> populateList(int size) {
+        List<String> l = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            l.add(UUID.randomUUID().toString());
+        }
+
+        return l;
+    }
+
 }
