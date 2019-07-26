@@ -34,7 +34,7 @@
   "dash": {
     "deposit-config": {
       "processing": {
-        "beanName": "org.dataconservancy.pass.deposit.messaging.status.DefaultDepositStatusProcessor"
+        "beanName": "oaiPmhStatusProcessor"
       },
       "mapping": {
         "http://dspace.org/state/archived": "accepted",

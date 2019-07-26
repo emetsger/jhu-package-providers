@@ -15,10 +15,12 @@
  */
 package edu.jhu.library.pass.deposit.provider.dash;
 
+import afu.org.checkerframework.checker.oigj.qual.O;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -47,7 +49,7 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
     private OaiResponseBodyProcessor responseProcessor;
 
     @Autowired
-    public OaiOkHttpRequestProcessor(OkHttpClient oaiClient,
+    public OaiOkHttpRequestProcessor(@Qualifier("oaiClientFactory") OkHttpClient oaiClient,
                                      OaiUrlBuilder urlBuilder,
                                      OaiResponseBodyProcessor responseProcessor) {
         this.oaiClient = oaiClient;

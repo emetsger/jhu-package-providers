@@ -23,6 +23,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -30,16 +31,16 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class OaiClientFactory implements FactoryBean<OkHttpClient> {
 
-    @Autowired
+    @Value("${pass.deposit.oaiclient.read-timeout-ms}")
     private long readTimeoutMs = 30000;
 
-    @Autowired
+    @Value("${pass.deposit.oaiclient.connect-timeout-ms}")
     private long connectTimeoutMs = 30000;
 
-    @Autowired
+    @Value("${pass.deposit.oaiclient.dash.oaiUser}")
     private String oaiUser;
 
-    @Autowired
+    @Value("${pass.deposit.oaiclient.dash.oaiPassword}")
     private String oaiPassword;
 
     @Override

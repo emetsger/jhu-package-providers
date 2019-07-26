@@ -18,6 +18,7 @@ package edu.jhu.library.pass.deposit.provider.dash;
 import edu.jhu.library.pass.deposit.provider.shared.dspace.DspaceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 /**
  * Spring Boot auto configuration class.
@@ -26,5 +27,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ComponentScan(basePackageClasses = {DashAutoConfiguration.class, DspaceAutoConfiguration.class})
+@PropertySource("classpath*:/dash.properties")
 public class DashPackageProviderAutoConfiguration {
 }

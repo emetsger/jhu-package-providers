@@ -77,18 +77,21 @@
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>deposit-model</artifactId>
             <version>${deposit-services.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>assembler-api</artifactId>
             <version>${deposit-services.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.dataconservancy.pass.deposit</groupId>
             <artifactId>shared-assembler</artifactId>
             <version>${deposit-services.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

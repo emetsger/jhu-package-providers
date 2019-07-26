@@ -8,5 +8,6 @@
 #
 FROM ${docker.deposit-services-core.version}
 RUN mkdir /provider-with-dependencies
+ADD target/classes/dash.properties /provider-with-dependencies
 ADD target/dash-package-provider-${project.version}.jar /provider-with-dependencies
 ADD target/dependencies/ /provider-with-dependencies
