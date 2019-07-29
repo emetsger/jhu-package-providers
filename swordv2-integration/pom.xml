@@ -221,7 +221,7 @@
                                             <url>
                                                 http://${pass.fedora.user}:${pass.fedora.password}@${fcrepo.server}:${fcrepo.http.port}/fcrepo/rest/
                                             </url>
-                                            <time>180000</time>
+                                            <time>3000000</time>
                                         </wait>
                                         <ports>
                                             <port>${fcrepo.http.port}:${fcrepo.http.port}</port>
@@ -327,7 +327,7 @@
                                         <skip>${dspace.skip}</skip>
                                         <wait>
                                             <url>http://${docker.host.address}:${dspace.port}/xmlui</url>
-                                            <time>180000</time>
+                                            <time>300000</time>
                                         </wait>
                                         <ports>
                                             <port>${dspace.port}:${dspace.port}</port>

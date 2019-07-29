@@ -28,6 +28,8 @@ import org.dataconservancy.pass.model.Repository;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringRunner;
 import submissions.SubmissionResourceUtil;
 
 import java.net.URI;
@@ -55,6 +57,16 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
     private static DepositSubmission depositSubmission;
 
     private FilesystemModelBuilder builder;
+
+    @Before
+    @Override
+    public void setUpOkHttp() throws Exception {
+        this.fcrepoPass = System.getProperty("pass.fedora.password", System.getenv("PASS_FEDORA_PASSWORD"));
+        this.fcrepoUser = System.getProperty("pass.fedora.user", System.getenv("PASS_FEDORA_USER"));
+        this.fcrepoBaseUrl = System.getProperty("pass.fedora.baseurl", System.getenv("PASS_FEDORA_BASEURL"));
+        this.contextUri = System.getProperty("pass.jsonld.context", System.getenv("PASS_JSONLD_CONTEXT"));
+        this.okHttp = fcrepoClient(this.fcrepoUser, this.fcrepoPass);
+    }
 
     @BeforeClass
     public static void setUpGraph() throws Exception {
@@ -91,15 +103,10 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
         depositSubmission = builder.build(graph.asJson(), Collections.emptyMap());
     }
 
-    @Before
-    public void setUp() throws Exception {
+    @Test
+    public void foo() {
         System.err.println(graph.submission().getId());
         System.err.println(depositSubmission.getId());
         triggerSubmission(URI.create(depositSubmission.getId()));
-    }
-
-    @Test
-    public void foo() {
-
     }
 }
