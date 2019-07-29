@@ -21,3 +21,4 @@ COPY --from=J10P /provider-with-dependencies/* /app/BOOT-INF/lib/
 COPY --from=NIHMS /provider-with-dependencies/* /app/BOOT-INF/lib/
 COPY --from=BAGIT /provider-with-dependencies/* /app/BOOT-INF/lib/
 COPY --from=DASH /provider-with-dependencies/* /app/BOOT-INF/lib/
+COPY --from=DASH /provider-resources/* /app/BOOT-INF/classes/

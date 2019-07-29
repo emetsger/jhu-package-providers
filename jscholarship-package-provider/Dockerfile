@@ -8,5 +8,6 @@
 #
 FROM ${docker.deposit-services-core.version}
 RUN mkdir /provider-with-dependencies
+RUN mkdir /provider-resources
 ADD target/jscholarship-package-provider-${project.version}.jar /provider-with-dependencies
 ADD target/dependencies/ /provider-with-dependencies

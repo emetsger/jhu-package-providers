@@ -19,6 +19,7 @@
 package edu.jhu.library.pass.deposit.provider.dash;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -69,11 +70,18 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
 
     private DocumentBuilderFactory dbf;
 
+    @Value("${pass.fedora.baseurl}")
     private String passBaseUrl;
 
+    @Value("${pass.deposit.provider.dash.copyBaseUrl}")
     private String repoCopyBaseUrl;
 
     @Autowired
+    public OaiDomResponseBodyProcessor(RepositoryCopyLocationAnalyzer analyzer, DocumentBuilderFactory dbf) {
+        this.analyzer = analyzer;
+        this.dbf = dbf;
+    }
+
     public OaiDomResponseBodyProcessor(RepositoryCopyLocationAnalyzer analyzer,
                                        DocumentBuilderFactory dbf,
                                        String passBaseUrl,
@@ -145,6 +153,22 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
             default:
                 throw new RuntimeException("Unable to parse OAI metadata: " + meta);
         }
+    }
+
+    public String getPassBaseUrl() {
+        return passBaseUrl;
+    }
+
+    public void setPassBaseUrl(String passBaseUrl) {
+        this.passBaseUrl = passBaseUrl;
+    }
+
+    public String getRepoCopyBaseUrl() {
+        return repoCopyBaseUrl;
+    }
+
+    public void setRepoCopyBaseUrl(String repoCopyBaseUrl) {
+        this.repoCopyBaseUrl = repoCopyBaseUrl;
     }
 
     private static boolean shouldIgnore(Document dom, String verb, Collection<String> toIgnore) {

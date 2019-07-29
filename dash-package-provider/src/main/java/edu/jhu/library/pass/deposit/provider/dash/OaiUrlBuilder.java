@@ -20,6 +20,7 @@ package edu.jhu.library.pass.deposit.provider.dash;
 
 import com.damnhandy.uri.template.UriTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
@@ -44,9 +45,13 @@ class OaiUrlBuilder {
 
     private final DateTimeFormatter utcDate = DateTimeFormatter.ISO_DATE.withZone(ZoneId.of("UTC"));
 
+    @Value("${pass.deposit.oaiclient.dash.oaiBaseUrl}")
     private String oaiBaseUrl;
 
-    @Autowired
+    public OaiUrlBuilder() {
+
+    }
+
     OaiUrlBuilder(String oaiBaseUrl) {
         this.oaiBaseUrl = oaiBaseUrl;
     }
@@ -89,4 +94,11 @@ class OaiUrlBuilder {
         }
     }
 
+    public String getOaiBaseUrl() {
+        return oaiBaseUrl;
+    }
+
+    public void setOaiBaseUrl(String oaiBaseUrl) {
+        this.oaiBaseUrl = oaiBaseUrl;
+    }
 }

@@ -27,6 +27,6 @@ import org.springframework.context.annotation.PropertySource;
  */
 @Configuration
 @ComponentScan(basePackageClasses = {DashAutoConfiguration.class, DspaceAutoConfiguration.class})
-@PropertySource("classpath*:/dash.properties")
+@PropertySource("classpath:/dash.properties")
 public class DashPackageProviderAutoConfiguration {
 }
