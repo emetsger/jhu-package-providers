@@ -79,8 +79,8 @@
       ],
       "protocol-binding": {
         "protocol": "SWORDv2",
-        "username": "${dspace.admin.username}",
-        "password": "${dspace.admin.password}",
+        "username": "${dspace.submitter.username}",
+        "password": "${dspace.submitter.password}",
         "server-fqdn": "${dspace.host}",
         "server-port": "${dspace.port}",
         "service-doc": "${dspace.baseuri}/swordv2/servicedocument",

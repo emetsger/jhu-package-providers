@@ -17,6 +17,8 @@ package edu.jhu.library.pass.deposit.provider.integration.swordv2;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dataconservancy.deposit.util.async.Condition;
+import org.dataconservancy.pass.client.PassClientFactory;
 import org.dataconservancy.pass.deposit.builder.fs.FilesystemModelBuilder;
 import org.dataconservancy.pass.deposit.builder.fs.PassJsonFedoraAdapter;
 import org.dataconservancy.pass.deposit.integration.shared.AbstractSubmissionFixture;
@@ -25,6 +27,7 @@ import org.dataconservancy.pass.deposit.integration.shared.graph.SubmissionGraph
 import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.dataconservancy.pass.model.PassEntity;
 import org.dataconservancy.pass.model.Repository;
+import org.dataconservancy.pass.model.RepositoryCopy;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static java.net.URI.create;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static submissions.SubmissionResourceUtil.lookupStream;
 
@@ -103,10 +107,48 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
         depositSubmission = builder.build(graph.asJson(), Collections.emptyMap());
     }
 
+    @Before
+    public void setUpPassClient() {
+        this.passClient = PassClientFactory.getPassClient();
+    }
+
     @Test
     public void foo() {
-        System.err.println(graph.submission().getId());
-        System.err.println(depositSubmission.getId());
         triggerSubmission(URI.create(depositSubmission.getId()));
+
+        // Wait for two RepositoryCopy resources:
+        //   one to J10P, one to DASH
+
+        // Should wait for the J10P RepositoryCopy to be complete with an Item URL and external IDs
+
+        Condition<RepositoryCopy> j10p = new Condition<>(() -> {
+            URI repo = passClient.findByAttribute(Repository.class, "repositoryKey", "jscholarship");
+            System.err.println("Found Repository: " + repo);
+            URI repoCopy = passClient.findByAttribute(RepositoryCopy.class, "repository", repo);
+            System.err.println("Found RepositoryCopy: " + repoCopy);
+            return passClient.readResource(repoCopy, RepositoryCopy.class);
+        },
+        (repoCopy -> RepositoryCopy.CopyStatus.ACCEPTED == repoCopy.getCopyStatus()),
+        "Find J10P repo copy");
+
+        // The DASH RepositoryCopy should be IN_PROGRESS, with a null Item URL and external IDs
+        Condition<RepositoryCopy> dash = new Condition<>(() -> {
+            URI repo = passClient.findByAttribute(Repository.class, "repositoryKey", "dash");
+            System.err.println("Found Repository: " + repo);
+            URI repoCopy = passClient.findByAttribute(RepositoryCopy.class, "repository", repo);
+            System.err.println("Found RepositoryCopy: " + repoCopy);
+            return passClient.readResource(repoCopy, RepositoryCopy.class);
+        },
+        (repoCopy -> RepositoryCopy.CopyStatus.IN_PROGRESS == repoCopy.getCopyStatus()),
+        "Find DASH repo copy");
+
+        System.err.println("Waiting for J10P repoCopy...");
+        j10p.await();
+        System.err.println("Found J10P repoCopy " + String.join(", ", j10p.getResult().getId().toString(), j10p.getResult().getCopyStatus().toString(), j10p.getResult().getAccessUrl().toString()));
+
+        System.err.println("Waiting for DASH repoCopy...");
+        dash.await();
+        System.err.println("Found DASH repoCopy " + String.join(", ", dash.getResult().getId().toString(), dash.getResult().getCopyStatus().toString()));
+        assertNull(dash.getResult().getAccessUrl());
     }
 }
