@@ -68,7 +68,7 @@ public class OaiDomResponseBodyProcessorTest {
 
     private OaiResponseBodyProcessor underTest;
 
-    private OaiResponseBodyProcessor.OaiRequest oaiRequestProperties;
+    private OaiResponseBodyProcessor.OaiRequestMeta oaiRequestMetaProperties;
 
     @Before
     public void setUp() throws Exception {
@@ -78,7 +78,7 @@ public class OaiDomResponseBodyProcessorTest {
         passBaseUrl = "https://pass.harvard.edu";
         submissionUri = URI.create(passBaseUrl + "/submissions/submission1234");
         repoCopyBaseUrl = "http://nrs.harvard.edu";
-        oaiRequestProperties = mock(OaiResponseBodyProcessor.OaiRequest.class);
+        oaiRequestMetaProperties = mock(OaiResponseBodyProcessor.OaiRequestMeta.class);
         underTest = new OaiDomResponseBodyProcessor(analyzer, dbf, passBaseUrl, repoCopyBaseUrl);
     }
 
@@ -89,9 +89,9 @@ public class OaiDomResponseBodyProcessorTest {
     public void processListIdentifiersResponse() {
         List<String> records = new ArrayList<>();
         InputStream response = this.getClass().getResourceAsStream(LIST_IDENTIFIERS_RESPONSE_OK);
-        when(oaiRequestProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
+        when(oaiRequestMetaProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
 
-        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestProperties, response, records);
+        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestMetaProperties, response, records);
 
         assertEquals(48, records.size());
         assertTrue(records.contains("oai:dash.harvard.edu:1/40998304"));
@@ -105,9 +105,9 @@ public class OaiDomResponseBodyProcessorTest {
     public void processListIdentifiersResponseWithResumptionToken() {
         List<String> records = new ArrayList<>();
         InputStream response = this.getClass().getResourceAsStream(LIST_IDENTIFIERS_RESUMPTION);
-        when(oaiRequestProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
+        when(oaiRequestMetaProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
 
-        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestProperties, response, records);
+        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestMetaProperties, response, records);
 
         assertEquals(1, records.size());
         assertTrue(records.contains("oai:dash.harvard.edu:1/40998304"));
@@ -124,7 +124,7 @@ public class OaiDomResponseBodyProcessorTest {
 
         String resumptionToken = null;
         try {
-            resumptionToken = underTest.listIdentifiersResponse(oaiRequestProperties, response, records);
+            resumptionToken = underTest.listIdentifiersResponse(oaiRequestMetaProperties, response, records);
             fail("Expected exception");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("badVerb"));
@@ -144,7 +144,7 @@ public class OaiDomResponseBodyProcessorTest {
 
         String resumptionToken = null;
         try {
-            resumptionToken = underTest.listIdentifiersResponse(oaiRequestProperties, response, records);
+            resumptionToken = underTest.listIdentifiersResponse(oaiRequestMetaProperties, response, records);
             fail("Expected exception");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("noRecordsMatch"));
@@ -163,9 +163,9 @@ public class OaiDomResponseBodyProcessorTest {
     public void processListIdentifersResponseWithError() {
         List<String> records = new ArrayList<>();
         InputStream response = this.getClass().getResourceAsStream(NO_RECORDS_MATCH);
-        when(oaiRequestProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
+        when(oaiRequestMetaProperties.verb()).thenReturn(OaiUrlBuilder.LIST_IDENTIFIERS);
 
-        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestProperties, response, records);
+        String resumptionToken = underTest.listIdentifiersResponse(oaiRequestMetaProperties, response, records);
 
         assertEquals(0, records.size());
         assertNull(resumptionToken);
@@ -176,9 +176,9 @@ public class OaiDomResponseBodyProcessorTest {
      */
     @Test
     public void processGetRecordResponse() {
-        when(oaiRequestProperties.verb()).thenReturn(OaiUrlBuilder.GET_RECORD);
+        when(oaiRequestMetaProperties.verb()).thenReturn(OaiUrlBuilder.GET_RECORD);
         InputStream response = this.getClass().getResourceAsStream(GET_RECORD_RESPONSE_OK);
-        URL repoCopyUrl = underTest.getRecordResponse(oaiRequestProperties, response, submissionUri);
+        URL repoCopyUrl = underTest.getRecordResponse(oaiRequestMetaProperties, response, submissionUri);
         assertNull(repoCopyUrl);
 
         ArgumentCaptor<Document> dimMetadata = ArgumentCaptor.forClass(Document.class);

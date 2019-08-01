@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.DIM_METADATA_PREFIX;
@@ -76,9 +77,8 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                             format("Error retrieving %s (code: %s): %s", listRecords, res.code(), res.message()));
                 }
 
-                resumptionToken = encode(
-                        responseProcessor.listIdentifiersResponse(
-                            new OaiRequestImpl(res.request(), LIST_IDENTIFIERS),
+                resumptionToken = responseProcessor.listIdentifiersResponse(
+                            new OaiRequestMetaImpl(res.request(), LIST_IDENTIFIERS, from, resumptionToken, DIM_METADATA_PREFIX),
                             res.body().byteStream(),
                             recordIdentifiers)
                 );
@@ -108,7 +108,7 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                         //  Parse request body for Harvard DSpace Item URL
                         //  (dc.identifier uri beginning 'http://nrs.harvard.edu')
                         return responseProcessor.getRecordResponse(
-                                new OaiRequestImpl(res.request(), GET_RECORD),
+                                new OaiRequestMetaImpl(res.request(), GET_RECORD, null, null, DIM_METADATA_PREFIX),
                                 res.body().byteStream(),
                                 submissionUri);
                     } catch (IOException e) {
@@ -180,27 +180,67 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
         return sb.toString();
     }
 
-    static class OaiRequestImpl implements OaiResponseBodyProcessor.OaiRequest {
+    static class OaiRequestMetaImpl implements OaiResponseBodyProcessor.OaiRequestMeta {
         private String method;
         private String url;
         private String verb;
+        private Instant from;
+        private String resumptionToken;
+        private String metadataPrefix;
 
-        private OaiRequestImpl(Request req, String verb) {
+        private OaiRequestMetaImpl(Request req, String verb) {
             this.verb = verb;
             this.method = req.method();
             this.url = req.url().toString();
         }
 
+        public OaiRequestMetaImpl(Request req, String verb, Instant from, String resumptionToken, String metadataPrefix) {
+            this(req, verb);
+            this.from = from;
+            this.resumptionToken = resumptionToken;
+            this.metadataPrefix = metadataPrefix;
+        }
+
+        @Override
         public String method() {
             return method;
         }
 
+        @Override
         public String url() {
             return url;
         }
 
+        @Override
         public String verb() {
             return verb;
+        }
+
+        @Override
+        public Instant from() {
+            return null;
+        }
+
+        @Override
+        public String resumptionToken() {
+            return null;
+        }
+
+        @Override
+        public String metadataPrefix() {
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner("\n  ", OaiRequestMetaImpl.class.getSimpleName() + "[", "]")
+                    .add("method='" + method + "'")
+                    .add("url='" + url + "'")
+                    .add("verb='" + verb + "'")
+                    .add("from=" + from)
+                    .add("resumptionToken='" + resumptionToken + "'")
+                    .add("metadataPrefix='" + metadataPrefix + "'")
+                    .toString();
         }
     }
 

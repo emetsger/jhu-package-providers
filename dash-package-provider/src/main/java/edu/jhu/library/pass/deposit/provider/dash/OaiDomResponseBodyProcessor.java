@@ -91,7 +91,7 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
     }
 
     @Override
-    public String listIdentifiersResponse(OaiRequest req, InputStream responseBody, List<String> records) {
+    public String listIdentifiersResponse(OaiRequestMeta req, InputStream responseBody, List<String> records) {
         Document dom = null;
         try {
             dom = dbf.newDocumentBuilder().parse(responseBody);
@@ -115,7 +115,7 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
     }
 
     @Override
-    public URL getRecordResponse(OaiRequest req, InputStream responseBody, URI submissionUri) {
+    public URL getRecordResponse(OaiRequestMeta req, InputStream responseBody, URI submissionUri) {
         Document dom = null;
         try {
             dom = dbf.newDocumentBuilder().parse(responseBody);
@@ -169,11 +169,11 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
         this.repoCopyBaseUrl = repoCopyBaseUrl;
     }
 
-    private static boolean shouldIgnore(Document dom, OaiRequest req, Collection<String> toIgnore) {
+    private static boolean shouldIgnore(Document dom, OaiRequestMeta req, Collection<String> toIgnore) {
         return shouldIgnore(dom, req, new AtomicReference<>(), toIgnore);
     }
 
-    private static boolean shouldIgnore(Document dom, OaiRequest req, AtomicReference<Node> node, Collection<String> toIgnore) {
+    private static boolean shouldIgnore(Document dom, OaiRequestMeta req, AtomicReference<Node> node, Collection<String> toIgnore) {
         NodeList errors = null;
         if ((errors = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_ERROR)) != null && errors.getLength() > 0) {
             if (errors.getLength() == 1

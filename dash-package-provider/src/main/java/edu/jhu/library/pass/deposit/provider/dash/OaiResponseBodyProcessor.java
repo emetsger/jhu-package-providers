@@ -23,6 +23,7 @@ import org.w3c.dom.Document;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -41,7 +42,7 @@ interface OaiResponseBodyProcessor {
      * @param records the List of OAI-PMH record identifiers to populate using the records from the response body
      * @return String resumptionToken, may be {@code null}
      */
-    String listIdentifiersResponse(OaiRequest req, InputStream responseBody, List<String> records);
+    String listIdentifiersResponse(OaiRequestMeta req, InputStream responseBody, List<String> records);
 
     /**
      * Processes a single GetRecord result from OAI-PMH.  If a valid response, populate the returned Map with extracted
@@ -52,7 +53,7 @@ interface OaiResponseBodyProcessor {
      * @param responseBody the OAI-PMH response body
      * @return the URL associated with the PASS Submission (e.g. a DSpace Item URL), or {@code null} if none is found
      */
-    URL getRecordResponse(OaiRequest req, InputStream responseBody, URI submissionUri);
+    URL getRecordResponse(OaiRequestMeta req, InputStream responseBody, URI submissionUri);
 
     /**
      * Processes metadata of an OAI-PMH record, and determines if it contains a URL that pointing to a RepositoryCopy
@@ -83,7 +84,7 @@ interface OaiResponseBodyProcessor {
     /**
      * Encapsulates salient properties of the OAI-PMH request that corresponds to a response body.
      */
-    interface OaiRequest {
+    interface OaiRequestMeta {
 
         /**
          * The HTTP method of the request
@@ -105,6 +106,27 @@ interface OaiResponseBodyProcessor {
          * @return the request verb
          */
         String verb();
+
+        /**
+         * The {@link Instant} used as the value for the OAI-PMH request parameter 'from'
+         *
+         * @return the {@code Instant} used as the 'from' parameter value
+         */
+        Instant from();
+
+        /**
+         * The OAI-PMH request parameter 'resumptionToken'
+         *
+         * @return the 'resumptionToken' parameter value
+         */
+        String resumptionToken();
+
+        /**
+         * The OAI-PMH request parameter 'metadataPrefix'
+         *
+         * @return the 'metadataPrefix' parameter value
+         */
+        String metadataPrefix();
 
     }
 
