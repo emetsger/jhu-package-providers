@@ -63,11 +63,12 @@ public class OaiUrlBuilderTest {
     @Test
     public void listIdentifiersWithFrom() {
         Instant now = Instant.now();
-        String formattedNow = DateTimeFormatter.ISO_DATE.withZone(ZoneId.of("UTC")).format(now);
+        String formattedNow = DateTimeFormatter.ofPattern("YYYY-MM-dd").withZone(ZoneId.of("UTC")).format(now);
         URL actual = underTest.listIdentifiers(DIM_METADATA_PREFIX, now, null);
 
         assertTrue(actual.toString().startsWith(BASE_URL));
         assertTrue(actual.getQuery().contains("from=" + formattedNow));
+        System.err.println(actual);
     }
 
     @Test

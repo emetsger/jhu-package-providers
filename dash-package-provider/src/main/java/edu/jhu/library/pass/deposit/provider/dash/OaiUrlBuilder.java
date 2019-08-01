@@ -43,7 +43,7 @@ class OaiUrlBuilder {
 
     private static final String LIST_IDENTIFIERS_TEMPLATE = "{+oaiBaseUrl}{?verb,from,metadataPrefix,resumptionToken}";
 
-    private final DateTimeFormatter utcDate = DateTimeFormatter.ISO_DATE.withZone(ZoneId.of("UTC"));
+    private final DateTimeFormatter utcDate = DateTimeFormatter.ofPattern("YYYY-MM-dd").withZone(ZoneId.of("UTC"));
 
     @Value("${pass.deposit.oaiclient.dash.oaiBaseUrl}")
     private String oaiBaseUrl;
