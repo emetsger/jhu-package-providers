@@ -50,6 +50,14 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
     private OaiResponseBodyProcessor responseProcessor;
 
+    private Throttler throttler = () -> {
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            // ignore
+        }
+    };
+
     @Autowired
     public OaiOkHttpRequestProcessor(@Qualifier("oaiClientFactory") OkHttpClient oaiClient,
                                      OaiUrlBuilder urlBuilder,
@@ -80,8 +88,10 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                 resumptionToken = responseProcessor.listIdentifiersResponse(
                             new OaiRequestMetaImpl(res.request(), LIST_IDENTIFIERS, from, resumptionToken, DIM_METADATA_PREFIX),
                             res.body().byteStream(),
-                            recordIdentifiers)
-                );
+                            recordIdentifiers);
+
+                throttler.throttle();
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -118,6 +128,11 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                 })
                 .filter(Objects::nonNull)
                 .findAny();
+    }
+
+    @FunctionalInterface
+    interface Throttler {
+        void throttle();
     }
 
     static String encode(String token) {
