@@ -15,7 +15,6 @@
  */
 package edu.jhu.library.pass.deposit.provider.dash;
 
-import afu.org.checkerframework.checker.oigj.qual.O;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -34,6 +33,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.DIM_METADATA_PREFIX;
+import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.GET_RECORD;
+import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.LIST_IDENTIFIERS;
 import static java.lang.String.format;
 
 /**
@@ -75,7 +76,12 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                             format("Error retrieving %s (code: %s): %s", listRecords, res.code(), res.message()));
                 }
 
-                resumptionToken = encode(responseProcessor.listIdentifiersResponse(res.body().byteStream(), recordIdentifiers));
+                resumptionToken = encode(
+                        responseProcessor.listIdentifiersResponse(
+                            new OaiRequestImpl(res.request(), LIST_IDENTIFIERS),
+                            res.body().byteStream(),
+                            recordIdentifiers)
+                );
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -99,8 +105,12 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                         }
 
                         //  Parse request body for PASS Submission URI
-                        //  Parse request body for Harvard DSpace Item URL (dc.identifier uri beginning 'http://nrs.harvard.edu')
-                        return responseProcessor.getRecordResponse(res.body().byteStream(), submissionUri);
+                        //  Parse request body for Harvard DSpace Item URL
+                        //  (dc.identifier uri beginning 'http://nrs.harvard.edu')
+                        return responseProcessor.getRecordResponse(
+                                new OaiRequestImpl(res.request(), GET_RECORD),
+                                res.body().byteStream(),
+                                submissionUri);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -168,6 +178,30 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
         }
 
         return sb.toString();
+    }
+
+    static class OaiRequestImpl implements OaiResponseBodyProcessor.OaiRequest {
+        private String method;
+        private String url;
+        private String verb;
+
+        private OaiRequestImpl(Request req, String verb) {
+            this.verb = verb;
+            this.method = req.method();
+            this.url = req.url().toString();
+        }
+
+        public String method() {
+            return method;
+        }
+
+        public String url() {
+            return url;
+        }
+
+        public String verb() {
+            return verb;
+        }
     }
 
 }

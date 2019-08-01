@@ -37,8 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static edu.jhu.library.pass.deposit.provider.dash.DashUtil.asStream;
-import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.GET_RECORD;
-import static edu.jhu.library.pass.deposit.provider.dash.OaiUrlBuilder.LIST_IDENTIFIERS;
 import static java.util.Collections.singletonList;
 
 @Component
@@ -93,15 +91,15 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
     }
 
     @Override
-    public String listIdentifiersResponse(InputStream response, List<String> records) {
+    public String listIdentifiersResponse(OaiRequest req, InputStream responseBody, List<String> records) {
         Document dom = null;
         try {
-            dom = dbf.newDocumentBuilder().parse(response);
+            dom = dbf.newDocumentBuilder().parse(responseBody);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        if (shouldIgnore(dom, LIST_IDENTIFIERS, singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
+        if (shouldIgnore(dom, req, singletonList(ERROR_CONDITION_NO_RECORDS_MATCH))) {
             return null;
         }
 
@@ -117,10 +115,10 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
     }
 
     @Override
-    public URL getRecordResponse(InputStream response, URI submissionUri) {
+    public URL getRecordResponse(OaiRequest req, InputStream responseBody, URI submissionUri) {
         Document dom = null;
         try {
-            dom = dbf.newDocumentBuilder().parse(response);
+            dom = dbf.newDocumentBuilder().parse(responseBody);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -128,7 +126,7 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
         Node request = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_REQUEST).item(0);
         OaiMetadata meta = OaiMetadata.forPrefix(request.getAttributes().getNamedItem(OAI_METADATA_PREFIX).getTextContent());
 
-        if (shouldIgnore(dom, GET_RECORD, Collections.emptyList())) {
+        if (shouldIgnore(dom, req, Collections.emptyList())) {
             return null;
         }
 
@@ -171,11 +169,11 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
         this.repoCopyBaseUrl = repoCopyBaseUrl;
     }
 
-    private static boolean shouldIgnore(Document dom, String verb, Collection<String> toIgnore) {
-        return shouldIgnore(dom, verb, new AtomicReference<>(), toIgnore);
+    private static boolean shouldIgnore(Document dom, OaiRequest req, Collection<String> toIgnore) {
+        return shouldIgnore(dom, req, new AtomicReference<>(), toIgnore);
     }
 
-    private static boolean shouldIgnore(Document dom, String verb, AtomicReference<Node> node, Collection<String> toIgnore) {
+    private static boolean shouldIgnore(Document dom, OaiRequest req, AtomicReference<Node> node, Collection<String> toIgnore) {
         NodeList errors = null;
         if ((errors = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_ERROR)) != null && errors.getLength() > 0) {
             if (errors.getLength() == 1
@@ -184,22 +182,23 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
                 return true;
             }
 
-            String errorMessage = "OAI-PMH request failed with the following error(s):\n" +
+            String errorMessage = String.format("OAI-PMH request (%s %s) failed with the following error(s):\n",
+                        req.method(), req.url()) +
                     asStream(errors).map(error -> String.format("  Code: %s, Message: %s",
                             error.getAttributes().getNamedItem(OAI_ERROR_CODE), error.getNodeValue()))
                             .collect(Collectors.joining("\n"));
             throw new RuntimeException(errorMessage);
         }
 
-        NodeList response = dom.getElementsByTagNameNS(OAI_PMH_NS, verb);
+        NodeList response = dom.getElementsByTagNameNS(OAI_PMH_NS, req.verb());
 
         if (response == null) {
-            throw new RuntimeException("Missing expected response element for OAI-PMH verb '" + verb + "'");
+            throw new RuntimeException("Missing expected response element for OAI-PMH verb '" + req.verb() + "'");
         }
 
         if (response.getLength() != 1) {
-            throw new RuntimeException("Unexpected number of response elements for OAI-PMH verb '" + verb +
-                    "': expected exactly one <" + verb + ">, but found " + response.getLength());
+            throw new RuntimeException("Unexpected number of response elements for OAI-PMH verb '" + req.verb() +
+                    "': expected exactly one <" + req.verb() + "> element, but found " + response.getLength() + " elements");
         }
 
         node.set(response.item(0));

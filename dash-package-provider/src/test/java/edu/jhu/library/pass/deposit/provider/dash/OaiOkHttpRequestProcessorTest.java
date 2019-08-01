@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -84,9 +83,9 @@ public class OaiOkHttpRequestProcessorTest {
 
         when(urlBuilder.listIdentifiers(OaiUrlBuilder.DIM_METADATA_PREFIX, now, null))
                 .thenReturn(url);
-        when(processor.listIdentifiersResponse(any(), any())).thenAnswer(inv -> {
-            ((List) inv.getArgument(1)).add("moo");
-            ((List) inv.getArgument(1)).add("cow");
+        when(processor.listIdentifiersResponse(any(), any(), any())).thenAnswer(inv -> {
+            ((List) inv.getArgument(2)).add("moo");
+            ((List) inv.getArgument(2)).add("cow");
             return null;
         });
 
@@ -99,7 +98,7 @@ public class OaiOkHttpRequestProcessorTest {
         assertEquals("cow", idList.get(1));
 
         verify(urlBuilder).listIdentifiers(OaiUrlBuilder.DIM_METADATA_PREFIX, now, null);
-        verify(processor).listIdentifiersResponse(any(), any());
+        verify(processor).listIdentifiersResponse(any(), any(), any());
         assertNotNull(webServer.takeRequest());
         assertEquals(1, webServer.getRequestCount());
     }
@@ -127,13 +126,13 @@ public class OaiOkHttpRequestProcessorTest {
         when(urlBuilder.listIdentifiers(eq(OaiUrlBuilder.DIM_METADATA_PREFIX), eq(now), any()))
                 .thenReturn(url);
 
-        when(processor.listIdentifiersResponse(any(), any())).thenAnswer(inv -> {
-            ((List) inv.getArgument(1)).add("moo");
-            ((List) inv.getArgument(1)).add("cow");
+        when(processor.listIdentifiersResponse(any(), any(), any())).thenAnswer(inv -> {
+            ((List) inv.getArgument(2)).add("moo");
+            ((List) inv.getArgument(2)).add("cow");
             return "resToken";
         }).thenAnswer(inv -> {
-            ((List) inv.getArgument(1)).add("foo");
-            ((List) inv.getArgument(1)).add("bar");
+            ((List) inv.getArgument(2)).add("foo");
+            ((List) inv.getArgument(2)).add("bar");
             return null;
         });
 
@@ -148,7 +147,7 @@ public class OaiOkHttpRequestProcessorTest {
         verify(urlBuilder).listIdentifiers(OaiUrlBuilder.DIM_METADATA_PREFIX, now, null);
         verify(urlBuilder).listIdentifiers(OaiUrlBuilder.DIM_METADATA_PREFIX, now, "resToken");
 
-        verify(processor, times(2)).listIdentifiersResponse(any(), any());
+        verify(processor, times(2)).listIdentifiersResponse(any(), any(), any());
         assertEquals(2, webServer.getRequestCount());
     }
 
@@ -177,8 +176,8 @@ public class OaiOkHttpRequestProcessorTest {
 
         when(urlBuilder.getRecord(any(), any())).thenReturn(url);
 
-        when(processor.getRecordResponse(any(), eq(submissionUri))).thenAnswer(inv -> {
-            String foo = IOUtils.toString(((InputStream) inv.getArgument(0)), "UTF-8");
+        when(processor.getRecordResponse(any(), any(), eq(submissionUri))).thenAnswer(inv -> {
+            String foo = IOUtils.toString(((InputStream) inv.getArgument(1)), "UTF-8");
             if ("match".equals(foo)) {
                 return itemUrl;
             }

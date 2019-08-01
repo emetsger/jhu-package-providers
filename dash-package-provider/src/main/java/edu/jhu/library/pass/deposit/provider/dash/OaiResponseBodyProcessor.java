@@ -36,21 +36,23 @@ interface OaiResponseBodyProcessor {
      * empty (an OAI-PMH "no matching records" error) do nothing.  Otherwise throw a RuntimeException with the error
      * message from the response.  Return a resumption token if present, otherwise {@code null}.
      *
-     * @param response  the OAI-PMH response body
+     * @param req OAI-PMH properties of the OAI-PMH request that produced the response body
+     * @param responseBody  the OAI-PMH response body
      * @param records the List of OAI-PMH record identifiers to populate using the records from the response body
      * @return String resumptionToken, may be {@code null}
      */
-    String listIdentifiersResponse(InputStream response, List<String> records);
+    String listIdentifiersResponse(OaiRequest req, InputStream responseBody, List<String> records);
 
     /**
      * Processes a single GetRecord result from OAI-PMH.  If a valid response, populate the returned Map with extracted
      * information.  If response is empty (an OAI-PMH "no matching records" error) do nothing.  Otherwise throw a
      * RuntimeException with the error message from the response.
      *
-     * @param response the OAI-PMH response body
+     * @param req OAI-PMH properties of the OAI-PMH request that produced the response body
+     * @param responseBody the OAI-PMH response body
      * @return the URL associated with the PASS Submission (e.g. a DSpace Item URL), or {@code null} if none is found
      */
-    URL getRecordResponse(InputStream response, URI submissionUri);
+    URL getRecordResponse(OaiRequest req, InputStream responseBody, URI submissionUri);
 
     /**
      * Processes metadata of an OAI-PMH record, and determines if it contains a URL that pointing to a RepositoryCopy
@@ -60,13 +62,13 @@ interface OaiResponseBodyProcessor {
     interface RepositoryCopyLocationAnalyzer {
 
         /**
-         * Parses the supplied metadata.  If the analyzer determines that the metadata represents or describes the
-         * PASS Submission, it will return a URL that provides the location of the Submission as described in the
-         * metadata.
+         * Parses the supplied metadata for a PASS RepositoryCopy URL.  If the analyzer determines that the metadata
+         * represents or describes the PASS Submission, it will return a URL that provides the location of the
+         * Submission as described in the metadata.
          *
-         * @param metadata
-         * @param submissionUri
-         * @return
+         * @param metadata a DOM containing the &gt;metadata/&lt; document parsed from an OAI getRecord response
+         * @param submissionUri the PASS Submission URI, which may or may not be referenced in the metadata
+         * @return the URL associated with the PASS Submission URI which represents a PASS RepositoryCopy
          */
         URL analyze(Document metadata, URI submissionUri, FieldMatcher submissionMatcher, FieldMatcher repoCopyMatcher);
     }
@@ -75,6 +77,34 @@ interface OaiResponseBodyProcessor {
     interface FieldMatcher {
 
         boolean matches(String mdSchema, String element, String qualifier, String textContent);
+
+    }
+
+    /**
+     * Encapsulates salient properties of the OAI-PMH request that corresponds to a response body.
+     */
+    interface OaiRequest {
+
+        /**
+         * The HTTP method of the request
+         *
+         * @return the method
+         */
+        String method();
+
+        /**
+         * The full URL (including query parameters) of the request
+         *
+         * @return the URL
+         */
+        String url();
+
+        /**
+         * The OAI-PMH request verb
+         *
+         * @return the request verb
+         */
+        String verb();
 
     }
 
