@@ -61,10 +61,16 @@ class OaiUrlBuilder {
         try {
             UriTemplate t = UriTemplate.fromTemplate(LIST_IDENTIFIERS_TEMPLATE)
                     .set("oaiBaseUrl", oaiBaseUrl)
-                    .set("verb", LIST_IDENTIFIERS)
-                    .set("metadataPrefix", metadataPrefix);
+                    .set("verb", LIST_IDENTIFIERS);
 
-            if (from != null) {
+
+            // Include the metadata prefix if the resumptionToken is null
+            if (resumptionToken == null) {
+                t.set("metadataPrefix", metadataPrefix);
+            }
+
+            // Include 'from' if the 'resumptionToken' is null.
+            if (from != null && resumptionToken == null) {
                 t.set("from", utcDate.format(from));
             }
 
