@@ -18,6 +18,8 @@
 
 package edu.jhu.library.pass.deposit.provider.dash;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -41,6 +43,8 @@ import static java.util.Collections.singletonList;
 
 @Component
 public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OaiDomResponseBodyProcessor.class);
 
     private static final String ERROR_CONDITIONS = "https://www.openarchives.org/OAI/openarchivesprotocol.html#ErrorConditions";
 
@@ -130,6 +134,9 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
             return null;
         }
 
+        LOG.debug("Parsing {} metadata document from OAI-PMH {} response from {}\n  All request metadata: \n  {}",
+                meta.getNamespace(), req.verb(), req.url(), req);
+
         switch (meta) {
             case DIM:
                 Node mdNode = dom.getElementsByTagNameNS(OAI_PMH_NS, OAI_METADATA).item(0);
@@ -149,7 +156,8 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
                             return textContent.startsWith(repoCopyBaseUrl);
                         }));
             default:
-                throw new RuntimeException("Unable to parse OAI metadata: " + meta);
+                throw new RuntimeException("Unable to parse OAI metadata " + meta.getNamespace() +
+                        " from response to " + req.url());
         }
     }
 

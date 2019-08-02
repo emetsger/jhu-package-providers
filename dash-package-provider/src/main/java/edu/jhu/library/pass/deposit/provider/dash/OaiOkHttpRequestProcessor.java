@@ -18,8 +18,11 @@ package edu.jhu.library.pass.deposit.provider.dash;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -44,15 +47,25 @@ import static java.lang.String.format;
 @Component
 class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OaiOkHttpRequestProcessor.class);
+
     private OkHttpClient oaiClient;
 
     private OaiUrlBuilder urlBuilder;
 
     private OaiResponseBodyProcessor responseProcessor;
 
-    private Throttler throttler = () -> {
+    @Value("${pass.deposit.oaiclient.dash.request-throttle-ms}")
+    private long requestThrottleMs;
+
+    private Throttler throttler = (reqMeta) -> {
         try {
-            Thread.sleep(1500);
+            LOG.debug("Sleeping {} ms between requests.  Next request: {}", requestThrottleMs, reqMeta);
+            LOG.debug("Connection pool size: {} in use: {} idle: {}",
+                    oaiClient.connectionPool().connectionCount(),
+                    oaiClient.connectionPool().connectionCount() - oaiClient.connectionPool().idleConnectionCount(),
+                    oaiClient.connectionPool().idleConnectionCount());
+            Thread.sleep(requestThrottleMs);
         } catch (InterruptedException e) {
             // ignore
         }
@@ -77,20 +90,24 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
             // Headers like Accept, From, User-Agent, and authentication are added by the class that configures the
             // OkHttpClient as interceptors
-            try (Response res = oaiClient.newCall(new Request.Builder()
+            Request req = new Request.Builder()
                     .url(listRecords)
-                    .build()).execute()) {
+                    .build();
+            OaiRequestMetaImpl reqMeta = new OaiRequestMetaImpl(
+                    req, LIST_IDENTIFIERS, from, resumptionToken, DIM_METADATA_PREFIX);
+
+            throttler.throttle(reqMeta);
+
+            try (Response res = oaiClient.newCall(req).execute()) {
                 if (res.code() != 200) {
                     throw new RuntimeException(
                             format("Error retrieving %s (code: %s): %s", listRecords, res.code(), res.message()));
                 }
 
                 resumptionToken = responseProcessor.listIdentifiersResponse(
-                            new OaiRequestMetaImpl(res.request(), LIST_IDENTIFIERS, from, resumptionToken, DIM_METADATA_PREFIX),
-                            res.body().byteStream(),
-                            recordIdentifiers);
+                        reqMeta, res.body().byteStream(), recordIdentifiers);
 
-                throttler.throttle();
+                throttler.throttle(reqMeta);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -105,9 +122,15 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                 .map(oaiRecordId -> {
                     URL getRecord = urlBuilder.getRecord(oaiRecordId, DIM_METADATA_PREFIX);
 
-                    try (Response res = oaiClient.newCall(new Request.Builder()
+                    Request req = new Request.Builder()
                             .url(getRecord)
-                            .build()).execute()) {
+                            .build();
+                    OaiRequestMetaImpl reqMeta = new OaiRequestMetaImpl(
+                            req, GET_RECORD, null, null, DIM_METADATA_PREFIX);
+
+                    throttler.throttle(reqMeta);
+
+                    try (Response res = oaiClient.newCall(req).execute()) {
 
                         if (res.code() != 200) {
                             throw new RuntimeException(
@@ -117,10 +140,18 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                         //  Parse request body for PASS Submission URI
                         //  Parse request body for Harvard DSpace Item URL
                         //  (dc.identifier uri beginning 'http://nrs.harvard.edu')
-                        return responseProcessor.getRecordResponse(
-                                new OaiRequestMetaImpl(res.request(), GET_RECORD, null, null, DIM_METADATA_PREFIX),
-                                res.body().byteStream(),
-                                submissionUri);
+
+                        try {
+                            return responseProcessor.getRecordResponse(
+                                    reqMeta,
+                                    res.body().byteStream(),
+                                    submissionUri);
+                        } catch (Exception e) {
+                            LOG.warn(String.format("Error processing response for request %s (%s)",
+                                    reqMeta.url(), reqMeta), e);
+                        }
+
+                        return null;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -132,7 +163,7 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
     @FunctionalInterface
     interface Throttler {
-        void throttle();
+        void throttle(OaiResponseBodyProcessor.OaiRequestMeta requestMeta);
     }
 
     static String encode(String token) {
