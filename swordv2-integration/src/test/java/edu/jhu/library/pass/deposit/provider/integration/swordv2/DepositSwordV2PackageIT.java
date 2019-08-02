@@ -28,6 +28,7 @@ import org.dataconservancy.pass.deposit.model.DepositSubmission;
 import org.dataconservancy.pass.model.PassEntity;
 import org.dataconservancy.pass.model.Repository;
 import org.dataconservancy.pass.model.RepositoryCopy;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -92,6 +93,9 @@ public class DepositSwordV2PackageIT extends AbstractSubmissionFixture {
                 .set("repositoryKey", field)
                 .linkFrom(graphBuilder.submission(), "repositories")
                 .build());
+
+        // Get a week's worth of OAI records
+        graphBuilder.submission().setSubmittedDate(DateTime.now().minusDays(7));
 
         graph = graphBuilder.build();
 
