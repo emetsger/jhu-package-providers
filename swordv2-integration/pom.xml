@@ -204,6 +204,7 @@
                                             <DSPACE_PORT>${dspace.port}</DSPACE_PORT>
                                             <DSPACE_BASEURI>${dspace.baseuri}</DSPACE_BASEURI>
                                             <DEPOSIT_SERVICES_VERSION>${project.parent.version}</DEPOSIT_SERVICES_VERSION>
+                                            <PASS_DEPOSIT_JOBS_DEFAULT_INTERVAL_MS>30000</PASS_DEPOSIT_JOBS_DEFAULT_INTERVAL_MS>
                                         </env>
                                     </run>
                                 </image>
