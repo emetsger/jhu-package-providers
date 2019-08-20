@@ -267,15 +267,12 @@ public class DashMetadataDomWriterTest {
     }
 
     /**
-     * Journal nlm title abbreviation, volume, issn(s), publisher name, publication date
+     * Journal nlm title abbreviation, issn(s), publisher name, publication date
      */
     @Test
     public void verifyJournalMeta() {
         validate(dimDoc, DC_SOURCE, DC_SOURCE_JOURNAL, (e) ->
                 assertEquals(journalMd.getJournalId(), e.getTextContent()));
-
-        validate(dimDoc, DC_SOURCE, DC_SOURCE_VOLUME, (e) ->
-                assertEquals(articleMd.getVolume(), e.getTextContent()));
 
         validate(dimDoc, DC_PUBLISHER, null, (e) ->
                 assertEquals(journalMd.getPublisherName(), e.getTextContent()));
@@ -311,13 +308,10 @@ public class DashMetadataDomWriterTest {
     }
 
     /**
-     * Article DOI, volume
+     * Article DOI
      */
     @Test
     public void verifyArticleMeta() {
-        validate(dimDoc, DC_SOURCE, DC_SOURCE_VOLUME, (e) ->
-                assertEquals(articleMd.getVolume(), e.getTextContent()));
-
         validate(dimDoc, DC_IDENTIFIER, DC_IDENTIFIER_DOI, (e) ->
                 assertEquals(articleMd.getDoi().toString(), e.getTextContent()));
     }

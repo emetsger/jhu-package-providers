@@ -193,12 +193,6 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                     .apply(e -> e.setTextContent(journalId));
         });
 
-        // Attach <dc:source:volume>
-        ofNullable(articleMd.getVolume()).ifPresent(volume -> {
-            dimElement(doc, DC_SOURCE, DC_SOURCE_VOLUME)
-                    .apply(e -> e.setTextContent(volume));
-        });
-
         // Attach a <dc:contributor.author> for each author of the manuscript
         metadata.getPersons()
                 .stream()
