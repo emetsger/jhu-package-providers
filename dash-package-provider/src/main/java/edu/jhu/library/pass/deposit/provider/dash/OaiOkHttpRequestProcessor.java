@@ -107,7 +107,7 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                 resumptionToken = responseProcessor.listIdentifiersResponse(
                         reqMeta, res.body().byteStream(), recordIdentifiers);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("OAI-PMH client unable to process request: " + reqMeta, e);
             }
         } while (resumptionToken != null && resumptionToken.trim().length() > 0);
 
