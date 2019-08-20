@@ -18,6 +18,8 @@ package edu.jhu.library.pass.deposit.provider.dash;
 import au.edu.apsr.mtk.base.DmdSec;
 import au.edu.apsr.mtk.base.METSException;
 import au.edu.apsr.mtk.base.MdWrap;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhu.library.pass.deposit.provider.shared.dspace.AbstractDspaceMetadataDomWriter;
 import org.dataconservancy.pass.client.PassClient;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
@@ -30,10 +32,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -76,6 +80,8 @@ import static org.joda.time.format.ISODateTimeFormat.dateHourMinute;
  * @author Elliot Metsger (emetsger@jhu.edu)
  */
 public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
+
+    private static final String FIRST_AUTHOR = "firstAuthorAffiliation";
 
     private Document doc;
 
@@ -204,8 +210,28 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
 
         // DASH elements
 
+        Optional<Submission> submissionResource = ofNullable(passClient.readResource(URI.create(submission.getId()), Submission.class));
+
+        // First author affiliation
+        submissionResource.ifPresent(s -> {
+            try {
+                ofNullable(new ObjectMapper().readTree(s.getMetadata()).findValue(FIRST_AUTHOR))
+                        .map(JsonNode::textValue)
+                        .ifPresent(affiliation -> {
+                            dimElement(doc, DashXMLConstants.AFFILIATION, DashXMLConstants.OTHER)
+                                    .apply(e -> {
+                                        e.setAttribute(DIM_MDSCHEMA, DashXMLConstants.DIM_MDSCHEMA_DASH);
+                                        e.setTextContent(affiliation);
+                                    });
+                        });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
         // Add Grant and Funder info
-        ofNullable(passClient.readResource(URI.create(submission.getId()), Submission.class)).ifPresent(s -> {
+        submissionResource.ifPresent(s -> {
             s.getGrants()
                     .stream()
                     .map(u -> passClient.readResource(u, Grant.class))
@@ -239,8 +265,6 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                     });
 
         });
-
-        // TODO DASH affiliation (pending addition to the metadata blob)
 
         // Provenance statement
 
