@@ -106,9 +106,6 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
                 resumptionToken = responseProcessor.listIdentifiersResponse(
                         reqMeta, res.body().byteStream(), recordIdentifiers);
-
-                throttler.throttle(reqMeta);
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
