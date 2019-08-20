@@ -153,7 +153,7 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
                         return null;
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        throw new RuntimeException("OAI-PMH client unable to process request: " + reqMeta, e);
                     }
 
                 })
