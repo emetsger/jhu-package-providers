@@ -2,6 +2,7 @@ package edu.jhu.library.pass.deposit.provider.dash;
 
 import au.edu.apsr.mtk.base.DmdSec;
 import au.edu.apsr.mtk.base.METSException;
+import edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants;
 import org.apache.commons.io.IOUtils;
 import org.dataconservancy.pass.client.PassClient;
 import org.dataconservancy.pass.deposit.model.DepositMetadata;
@@ -380,6 +381,20 @@ public class DashMetadataDomWriterTest {
         Element e = affiliationElement.iterator().next();
 
         assertEquals(FIRST_AUTHOR_AFFILIATION, e.getTextContent());
+    }
+
+    /**
+     * The DIM metadata document should include the Submission URI as dc.relation.uri.
+     */
+    @Test
+    public void verifyPassSubmissionId() {
+        Set<Element> submissionUriElements = elementsForDimField(dimDoc, XMLConstants.DC_RELATION, XMLConstants.DC_URI);
+
+        assertEquals(1, submissionUriElements.size());
+
+        Element e = submissionUriElements.iterator().next();
+
+        assertEquals(submission.getId(), e.getTextContent());
     }
 
     private static void validate(Element dimDoc, String fieldName, String qualifier, Consumer<Element> validator) {

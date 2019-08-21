@@ -124,6 +124,8 @@ public class XMLConstants {
 
     public static final String DC_CITATION = "citation";
 
+    public static final String DC_URI = "uri";
+
 
     /*
      * See http://dublincore.org/documents/dcmi-terms/

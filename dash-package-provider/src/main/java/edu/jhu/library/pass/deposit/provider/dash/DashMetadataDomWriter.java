@@ -58,11 +58,12 @@ import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.D
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_IDENTIFIER_DOI;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_IDENTIFIER_ISSN;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_PUBLISHER;
+import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_RELATION;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_SOURCE;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_SOURCE_JOURNAL;
-import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_SOURCE_VOLUME;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_TITLE;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_TYPE;
+import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DC_URI;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DIM;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DIM_ELEMENT;
 import static edu.jhu.library.pass.deposit.provider.shared.dspace.XMLConstants.DIM_FIELD;
@@ -291,6 +292,13 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                 .apply(e -> {
                     e.setTextContent(String.format("PASS Submission identifier: %s", submission.getId()));
                 });
+
+        // PASS Submission URI as dc.relation.uri
+
+        submissionResource.ifPresent(s -> {
+            dimElement(doc, DC_RELATION, DC_URI)
+                    .apply(e -> e.setTextContent(s.getId().toString()));
+        });
 
         return rootElement;
     }
