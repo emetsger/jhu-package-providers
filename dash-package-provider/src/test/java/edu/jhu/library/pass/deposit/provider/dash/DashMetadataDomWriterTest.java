@@ -328,7 +328,7 @@ public class DashMetadataDomWriterTest {
     public void verifyFundersAndGrants() {
         validate(dimDoc, DashXMLConstants.FUNDER, DC_IDENTIFIER, (e) -> {
             assertEquals(DashXMLConstants.DIM_MDSCHEMA_DASH, e.getAttribute(DIM_MDSCHEMA));
-            assertEquals(passFunder.getLocalKey().substring(passFunder.getLocalKey().lastIndexOf(":")), e.getTextContent());
+            assertEquals(passFunder.getLocalKey().substring(passFunder.getLocalKey().lastIndexOf(":") + 1), e.getTextContent());
         });
 
         validate(dimDoc, DashXMLConstants.FUNDER, DashXMLConstants.NAME, (e) -> {

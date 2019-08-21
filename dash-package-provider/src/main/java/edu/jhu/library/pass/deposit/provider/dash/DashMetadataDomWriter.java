@@ -254,12 +254,8 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                                     dimElement(doc, DashXMLConstants.FUNDER, DashXMLConstants.IDENTIFIER)
                                             .apply(e -> {
                                                 e.setAttribute(DIM_MDSCHEMA, DashXMLConstants.DIM_MDSCHEMA_DASH);
-                                                String localKey = funder.getLocalKey();
-                                                if (localKey.contains(":")) {
-                                                    e.setTextContent(localKey.substring(localKey.lastIndexOf(":")));
-                                                } else {
-                                                    e.setTextContent(localKey);
-                                                }
+                                                e.setTextContent(passLocatorId(funder.getLocalKey())
+                                                        .orElse(funder.getLocalKey()));
                                             });
                                 });
                     });
@@ -297,6 +293,21 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
                 });
 
         return rootElement;
+    }
+
+    /**
+     * Performs a lame heuristic on a string to determine if the string represents a PASS locator id like:
+     * {@code harvard.edu:funder:1287}, and returns the last portion of the locatorId (in the example: {@code 1287}).
+     *
+     * @param localKey the local key which may be in the form of a so-called locator id
+     * @return an Optional with the last portion of the locator id, otherwise empty
+     */
+    private static Optional<String> passLocatorId(String localKey) {
+        if (localKey.contains(":") && !localKey.endsWith(":") && localKey.split(":").length == 3) {
+            return Optional.of(localKey.substring(localKey.lastIndexOf(":") + 1));
+        }
+
+        return Optional.empty();
     }
 
     private Function<Consumer<Element>, Element> dimElement(Document doc, String elementName, String elementQualifier) {
