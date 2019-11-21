@@ -22,8 +22,8 @@ before_install:
 
 install: mvn -U install -Ddocker.skip=true -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-script: if [ "$TRAVIS_PULL_REQUEST" == "false" ] ; then mvn -s ./settings.xml deploy
-  -DtrimStackTrace=false -Ddocker.keepContainer -Ddocker.useColor=false; else mvn verify -DtrimStackTrace=false -Ddocker.keepContainer -Ddocker.useColor=false ; fi
+script: if [ "$TRAVIS_PULL_REQUEST" == "false" ] ; then mvn -Pdocker-for-mac -s ./settings.xml deploy
+  -DtrimStackTrace=false -Ddocker.keepContainer -Ddocker.useColor=false; else mvn verify -Pdocker-for-mac -DtrimStackTrace=false -Ddocker.keepContainer -Ddocker.useColor=false ; fi
 
 jdk:
   - oraclejdk8
@@ -31,7 +31,6 @@ jdk:
 after_failure:
   - docker ps
   - docker ps -a
-  - docker logs `docker ps|grep deposit-services-providers-its-1|awk '{print $1}'`
-  - docker logs `docker ps |grep index|awk '{print $1}'`
-  - docker logs `docker ps|grep fcrepo-1|awk '{print $1}'`
-  - docker logs `docker ps|grep fcrepo-2|awk '{print $1}'`
+  - docker logs `docker ps -a |grep deposit-services-providers-its|awk '{print $1}'`
+  - docker logs `docker ps -a |grep index|awk '{print $1}'`
+  - docker logs `docker ps -a|grep fcrepo|awk '{print $1}'`
