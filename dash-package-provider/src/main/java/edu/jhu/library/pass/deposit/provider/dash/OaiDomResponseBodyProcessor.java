@@ -149,7 +149,7 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
                 }
                 return analyzer.analyze(mdDoc, submissionUri,
                         ((mdSchema, element, qualifier, textContent) -> {
-                            return textContent.startsWith(passBaseUrl);
+                            return textContent.equalsIgnoreCase(submissionUri.toString());
 
                         }),
                         ((mdSchema, element, qualifier, textContent) -> {
