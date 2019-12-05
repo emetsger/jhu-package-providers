@@ -98,6 +98,8 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
 
             throttler.throttle(reqMeta);
 
+            LOG.debug("Performing OAI ListRecords Request: {}", reqMeta);
+
             try (Response res = oaiClient.newCall(req).execute()) {
                 if (res.code() != 200) {
                     throw new RuntimeException(
@@ -111,7 +113,11 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
             }
         } while (resumptionToken != null && resumptionToken.trim().length() > 0);
 
-        return recordIdentifiers.stream();
+        return recordIdentifiers
+                .stream()
+                .peek(recordId -> {
+                    LOG.debug("ListRecords result: {}", recordId);
+                });
     }
 
     public Optional<URL> analyzeRecords(URI submissionUri, Stream<String> oaiRecordIds) {
@@ -126,6 +132,8 @@ class OaiOkHttpRequestProcessor implements OaiRequestProcessor {
                             req, GET_RECORD, null, null, DIM_METADATA_PREFIX);
 
                     throttler.throttle(reqMeta);
+
+                    LOG.debug("Performing OAI GetRecord Request: {}", reqMeta);
 
                     try (Response res = oaiClient.newCall(req).execute()) {
 

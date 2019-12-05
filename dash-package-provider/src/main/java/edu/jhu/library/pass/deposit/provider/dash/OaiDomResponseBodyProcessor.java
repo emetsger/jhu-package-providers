@@ -149,11 +149,19 @@ public class OaiDomResponseBodyProcessor implements OaiResponseBodyProcessor {
                 }
                 return analyzer.analyze(mdDoc, submissionUri,
                         ((mdSchema, element, qualifier, textContent) -> {
-                            return textContent.equalsIgnoreCase(submissionUri.toString());
+                            boolean match = textContent.equalsIgnoreCase(submissionUri.toString());
+                            LOG.trace("FieldMatcher matching (case-insensitive): '{}' matches: {} mdSchema '{}' " +
+                                            "element '{}' qualifier '{}' textContent '{}'",
+                                    submissionUri.toString(), match, mdSchema, element, qualifier, textContent);
+                            return  match;
 
                         }),
                         ((mdSchema, element, qualifier, textContent) -> {
-                            return textContent.startsWith(repoCopyBaseUrl);
+                            boolean match = textContent.startsWith(repoCopyBaseUrl);
+                            LOG.trace("FieldMatcher matching (starts with): '{}' matches: {} mdSchema '{}' " +
+                                            "element '{}' qualifier '{}' textContent '{}'",
+                                    repoCopyBaseUrl, match, mdSchema, element, qualifier, textContent);
+                            return match;
                         }));
             default:
                 throw new RuntimeException("Unable to parse OAI metadata " + meta.getNamespace() +
