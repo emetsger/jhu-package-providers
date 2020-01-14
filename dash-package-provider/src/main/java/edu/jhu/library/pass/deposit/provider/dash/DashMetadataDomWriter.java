@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -291,6 +292,11 @@ public class DashMetadataDomWriter extends AbstractDspaceMetadataDomWriter {
         dimElement(doc, DC_DESCRIPTION, DCT_PROV)
                 .apply(e -> {
                     e.setTextContent(String.format("PASS Submission identifier: %s", submission.getId()));
+                });
+
+        dimElement(doc, DC_DESCRIPTION, DCT_PROV)
+                .apply(e -> {
+                    e.setTextContent(String.format("PASS local package identifier: %s", UUID.randomUUID().toString()));
                 });
 
         // PASS Submission URI as dc.relation.uri
